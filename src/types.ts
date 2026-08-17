@@ -91,6 +91,7 @@ export interface JobRecord {
   currentAttempt: number;
   createdAt: string;
   updatedAt: string;
+  completedAt?: string;
   sessionId?: string;
   summary?: string;
   artifacts: Artifact[];
@@ -189,4 +190,39 @@ export interface CompactGroupResult {
   blocked_tasks: number;
   summary: string;
   tasks?: CompactBatchTaskResult[];
+}
+
+export interface StateRetentionOptions {
+  ttlSeconds?: number;
+  maxBytes?: number;
+  dryRun?: boolean;
+}
+
+export interface CleanupItemResult {
+  id: string;
+  type: "job" | "group";
+  path: string;
+  bytes: number;
+  updatedAt: string;
+  deleted: boolean;
+  reason?: string;
+}
+
+export interface CleanupError {
+  id?: string;
+  type?: "job" | "group";
+  path: string;
+  error: string;
+}
+
+export interface StateCleanupResult {
+  cleanedJobs: number;
+  cleanedGroups: number;
+  freedBytes: number;
+  retainedJobs: number;
+  retainedGroups: number;
+  totalBytes: number;
+  dryRun: boolean;
+  items: CleanupItemResult[];
+  errors: CleanupError[];
 }

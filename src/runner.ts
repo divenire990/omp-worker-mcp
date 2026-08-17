@@ -3,10 +3,12 @@ import { createInterface } from "node:readline";
 import { createWriteStream, existsSync } from "node:fs";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { extractAssistantText, extractSessionId, parseResultEnvelope } from "./protocol.js";
 import { cancellationFilePath, clearCancellationRequest, readJob, writeJob } from "./job-store.js";
+import type { JobRecord } from "./types.js";
 
-async function terminateOwnedProcessTree(child: ChildProcess): Promise<void> {
+export async function terminateOwnedProcessTree(child: ChildProcess): Promise<void> {
   if (!child.pid || child.exitCode !== null) return;
   if (process.platform === "win32") {
     await new Promise<void>((resolve) => {
@@ -29,7 +31,7 @@ async function terminateOwnedProcessTree(child: ChildProcess): Promise<void> {
 async function main(): Promise<void> {
   const jobFile = process.argv[2];
   if (!jobFile) throw new Error("runner requires a job.json path");
-  const initial = JSON.parse(await readFile(path.resolve(jobFile), "utf8")) as Awaited<ReturnType<typeof readJob>>;
+  const initial = JSON.parse(await readFile(path.resolve(jobFile), "utf8")) as JobRecord;
   const job = await readJob(initial.id);
   const attempt = job.attempts.find((item) => item.number === job.currentAttempt);
   if (!attempt) throw new Error(`Attempt ${job.currentAttempt} is missing`);
@@ -174,28 +176,30 @@ async function main(): Promise<void> {
   await writeJob(latest);
 }
 
-main().catch(async (error: unknown) => {
-  const message = error instanceof Error ? error.stack || error.message : String(error);
-  process.stderr.write(`${message}\n`);
-  try {
-    const jobFile = process.argv[2];
-    if (jobFile) {
-      const initial = JSON.parse(await readFile(path.resolve(jobFile), "utf8")) as { id?: string };
-      if (initial.id) {
-        const job = await readJob(initial.id);
-        const attempt = job.attempts.find((item) => item.number === job.currentAttempt);
-        job.status = "failed";
-        job.error = message;
-        if (attempt) {
-          attempt.status = "failed";
-          attempt.error = message;
-          attempt.completedAt = new Date().toISOString();
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  main().catch(async (error: unknown) => {
+    const message = error instanceof Error ? error.stack || error.message : String(error);
+    process.stderr.write(`${message}\n`);
+    try {
+      const jobFile = process.argv[2];
+      if (jobFile) {
+        const initial = JSON.parse(await readFile(path.resolve(jobFile), "utf8")) as { id?: string };
+        if (initial.id) {
+          const job = await readJob(initial.id);
+          const attempt = job.attempts.find((item) => item.number === job.currentAttempt);
+          job.status = "failed";
+          job.error = message;
+          if (attempt) {
+            attempt.status = "failed";
+            attempt.error = message;
+            attempt.completedAt = new Date().toISOString();
+          }
+          await writeJob(job);
         }
-        await writeJob(job);
       }
+    } catch {
+      // 最后兜底失败只能写 stderr，避免覆盖原始异常。
     }
-  } catch {
-    // 最后兜底失败只能写 stderr，避免覆盖原始异常。
-  }
-  process.exitCode = 1;
-});
+    process.exitCode = 1;
+  });
+}

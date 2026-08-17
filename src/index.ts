@@ -8,11 +8,13 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { buildContinuePrompt, buildDelegatePrompt } from "./protocol.js";
 import {
+  cleanState,
   clearCancellationRequest,
   createGroupId,
   createJobId,
   ensureGroupDirectory,
   ensureJobDirectory,
+  getRetentionOptionsFromEnv,
   groupFilePath,
   jobFilePath,
   readGroup,
@@ -35,6 +37,7 @@ import {
   type GroupStatus,
   type JobAttempt,
   type JobRecord,
+  type StateCleanupResult,
 } from "./types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -1041,6 +1044,25 @@ server.registerTool(
     );
   },
 );
+
+if (process.env.OMP_WORKER_AUTO_CLEANUP_ON_START === "true" || process.env.OMP_WORKER_AUTO_CLEANUP_ON_START === "1") {
+  const envOpts = getRetentionOptionsFromEnv();
+  if (envOpts.ttlSeconds || envOpts.maxBytes) {
+    cleanState(envOpts)
+      .then((res: StateCleanupResult) => {
+        if (res.errors.length > 0) {
+          for (const err of res.errors) {
+            process.stderr.write(`[state-cleanup warning] ${err.path}: ${err.error}\n`);
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        process.stderr.write(
+          `[state-cleanup startup error] ${err instanceof Error ? err.message : String(err)}\n`,
+        );
+      });
+  }
+}
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
