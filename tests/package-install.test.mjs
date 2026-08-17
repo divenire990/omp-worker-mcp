@@ -7,12 +7,86 @@ import test from "node:test";
 import { promisify } from "node:util";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { existsSync } from "node:fs";
 
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 const projectRoot = path.resolve(import.meta.dirname, "..");
-const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
 
+/**
+ * Portable, cross-platform npm runner for smoke tests.
+ * Resolves npm CLI without depending on project-local node_modules/npm
+ * or hardcoding user machine paths.
+ */
+function getNpmRunner() {
+  if (process.env.npm_execpath && existsSync(process.env.npm_execpath)) {
+    return { type: "node", execPath: process.execPath, script: process.env.npm_execpath };
+  }
+
+  const nodeDir = path.dirname(process.execPath);
+  const candidates = [
+    path.join(nodeDir, "node_modules", "npm", "bin", "npm-cli.js"),
+    path.join(nodeDir, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+    path.join(nodeDir, "..", "node_modules", "npm", "bin", "npm-cli.js"),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return { type: "node", execPath: process.execPath, script: candidate };
+    }
+  }
+
+  const pathSep = process.platform === "win32" ? ";" : ":";
+  const pathExts = process.platform === "win32" ? [".cmd", ".exe", ""] : [""];
+  const paths = (process.env.PATH || "").split(pathSep);
+
+  for (const dir of paths) {
+    if (!dir || (dir.toLowerCase().includes("omp-worker-mcp") && dir.toLowerCase().includes("node_modules"))) {
+      continue;
+    }
+    for (const ext of pathExts) {
+      const candidateExec = path.join(dir, `npm${ext}`);
+      if (existsSync(candidateExec)) {
+        const adjacentCli = [
+          path.join(dir, "node_modules", "npm", "bin", "npm-cli.js"),
+          path.join(dir, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+          path.join(dir, "..", "node_modules", "npm", "bin", "npm-cli.js"),
+        ];
+        for (const cli of adjacentCli) {
+          if (existsSync(cli)) {
+            return { type: "node", execPath: process.execPath, script: cli };
+          }
+        }
+        return { type: "binary", execPath: candidateExec };
+      }
+    }
+  }
+
+  return { type: "binary", execPath: process.platform === "win32" ? "npm.cmd" : "npm" };
+}
+
+const npmRunner = getNpmRunner();
+
+async function runNpm(args, options = {}) {
+  const cleanEnv = { ...process.env };
+  delete cleanEnv.npm_config_prefix;
+  delete cleanEnv.INIT_CWD;
+
+  const runOptions = {
+    ...options,
+    env: { ...cleanEnv, ...(options.env || {}) },
+  };
+
+  if (npmRunner.type === "node") {
+    return await execFileAsync(npmRunner.execPath, [npmRunner.script, ...args], runOptions);
+  }
+
+  if (process.platform === "win32") {
+    const cmdLine = `"${npmRunner.execPath}" ${args.map((a) => (a.includes(" ") ? `"${a}"` : a)).join(" ")}`;
+    return await execAsync(cmdLine, runOptions);
+  }
+
+  return await execFileAsync(npmRunner.execPath, args, runOptions);
+}
 test("package.json metadata satisfies publishing and Node >=22 constraints", async () => {
   const pkgContent = await readFile(path.join(projectRoot, "package.json"), "utf8");
   const pkg = JSON.parse(pkgContent);
@@ -34,10 +108,9 @@ test("package.json metadata satisfies publishing and Node >=22 constraints", asy
 });
 
 test("npm pack includes dist and bin and excludes src, tests, and dev configs", async () => {
-  const { stdout } = await execAsync(`"${npmCmd}" pack --dry-run --json`, {
+  const { stdout } = await runNpm(["pack", "--dry-run", "--json"], {
     cwd: projectRoot,
   });
-
   const packData = JSON.parse(stdout);
   assert.ok(Array.isArray(packData) && packData.length > 0, "packData should be non-empty array");
 
@@ -69,10 +142,9 @@ test("npm pack, install into isolated directory, and execute bin entry", async (
 
   try {
     // 1. Pack the package to a tarball in temp directory
-    const { stdout: packStdout } = await execAsync(`"${npmCmd}" pack --pack-destination "${tempDir}"`, {
+    const { stdout: packStdout } = await runNpm(["pack", "--pack-destination", tempDir], {
       cwd: projectRoot,
     });
-
     const tarballFileName = packStdout.trim().split(/\r?\n/).pop().trim();
     const tarballPath = path.join(tempDir, tarballFileName);
 
@@ -80,9 +152,8 @@ test("npm pack, install into isolated directory, and execute bin entry", async (
     const consumerDir = await mkdtemp(path.join(tmpdir(), "omp-worker-consumer-"));
 
     try {
-      await execAsync(`"${npmCmd}" init -y`, { cwd: consumerDir });
-      await execAsync(`"${npmCmd}" install "${tarballPath}"`, { cwd: consumerDir });
-
+      await runNpm(["init", "-y"], { cwd: consumerDir });
+      await runNpm(["install", tarballPath], { cwd: consumerDir });
       const binScriptPath = path.join(consumerDir, "node_modules", "omp-worker-mcp", "bin", "omp-worker-mcp.mjs");
 
       // 3. Test bin --help
