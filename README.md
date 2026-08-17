@@ -22,7 +22,7 @@
   <em>Asynchronous task execution, DAG dependency resolution, path ownership isolation, and structured result verification.</em>
 </p>
 
-[Quick Start](#installation-quick-start) • [MCP Configuration](#mcp-client-configuration) • [Configuration](#configuration-environment-variables) • [State Lifecycle](#state-lifecycle-retention-restart-recovery) • [Available Tools](#available-mcp-tools) • [Safety Contract](#task-safety-ownership-contract) • [Compatibility](#compatibility-changelog) • [Upstream Attribution](#upstream-attribution-support-boundaries)
+[Quick Start](#installation-quick-start) • [Author Experience](#author-workflow-experience) • [MCP Configuration](#mcp-client-configuration) • [Configuration](#configuration-environment-variables) • [State Lifecycle](#state-lifecycle-retention-restart-recovery) • [Available Tools](#available-mcp-tools) • [Safety Contract](#task-safety-ownership-contract) • [Compatibility](#compatibility-changelog) • [Upstream Attribution](#upstream-attribution-support-boundaries)
 
 </div>
 
@@ -35,6 +35,15 @@
 - 🛡️ **Workspace Path Isolation**: Enforce explicit write-path boundaries and prevent overlapping file modifications between concurrent tasks.
 - 🔍 **Supervised Resumption & Envelopes**: Inspect interim logs in real time, extract structured JSON outcome envelopes (`OMP_WORKER_RESULT`), and supply supervisory guidance to retry or adjust tasks.
 - 💾 **Persistent State & Configurable Retention**: File-backed state persistence for job metadata and logs with configurable time-to-live (TTL) and disk capacity bounds.
+
+---
+
+## Author Workflow Experience
+
+In the author's daily local workflow, `omp-worker-mcp` is configured with **Gemini 3.7 Flash** as the underlying model for background OMP workers. Within the author's personal Antigravity account and quota environment, where model quotas are relatively generous, this setup has provided a very fast and dependable subjective experience across multi-step coding, research, and batch orchestration workflows.
+
+> **Disclaimer & Boundary Notice**:
+> This note reflects the author's personal setup and qualitative workflow experience only. It is **not** an independent benchmark, performance guarantee, or formal service commitment. Model availability, generation speed, quota allocations, and task execution quality vary significantly across different accounts, regions, model versions, task scopes, and local runtime environments. Neither Google Gemini nor Antigravity endorses or sponsors this project.
 
 ---
 
