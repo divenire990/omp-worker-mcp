@@ -31,13 +31,16 @@ The following interfaces constitute the project's public API and contract. Any m
 All Model Context Protocol (MCP) endpoints provided by the server:
 
 - **Single Task Tools**:
-  - `omp_worker_run`
-  - `omp_worker_cancel`
-  - `omp_worker_result`
+  - `omp_run_compact` (Preferred single-task runner with compact result)
+  - `omp_delegate` (Low-level async task dispatch)
+  - `omp_wait` (Wait for task completion)
+  - `omp_result` (Inspect full task result and logs)
+  - `omp_continue` (Resume session with supervisory feedback)
+  - `omp_cancel` (Stop or terminate active task)
 - **DAG Group Orchestration Tools**:
-  - `omp_worker_group_run`
-  - `omp_worker_group_result`
-
+  - `omp_run_batch_compact` (Preferred DAG batch runner with aggregated result)
+  - `omp_wait_group` (Wait for batch group)
+  - `omp_cancel_group` (Cancel batch group)
 #### Contract Invariants
 - **Tool Names**: Stable identifiers exposed via MCP tools list.
 - **Input Schemas**: Parameter names, types, required fields, and default values defined via Zod schemas.
@@ -94,9 +97,7 @@ To ensure smooth upgrades for downstream agents, workflows, and integrations:
 - Relies on native ECMAScript Modules (ESM), Node.js built-in test runner (`node:test`), and modern standard library APIs.
 
 ### Operating Systems
-- **Windows** (win32, PowerShell/cmd execution environments)
-- **Linux** (x86_64, aarch64)
-- **macOS** (Darwin x86_64, Apple Silicon)
-
+- **Windows** (win32): Fully verified and supported in production and automated test suites.
+- **macOS** (Darwin) & **Linux** (x86_64, aarch64): Architectural design targets; users should verify local OMP CLI availability and platform-specific process management behaviors.
 ### External Dependencies
 - Requires a local `omp` executable available in the system `PATH` or configured explicitly via environment variables.

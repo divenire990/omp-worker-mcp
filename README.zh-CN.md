@@ -45,7 +45,7 @@
 - **运行环境要求**：
   - Node.js **>= 22.0.0**（依赖原生 ECMAScript Modules 与标准库能力）。
   - 用户有责任遵守适用于其自身环境的 OMP CLI 许可证及使用条款。
-- **平台支持**：支持 Windows、macOS 和 Linux 本地 Node.js 与 OMP CLI 运行环境。
+- **平台支持**：Windows 环境已完整验证支持；macOS 与 Linux 为架构设计目标，需用户自行验证本地 OMP CLI 可用性及进程管理行为。
 
 ---
 

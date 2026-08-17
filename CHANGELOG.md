@@ -11,12 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of `omp-worker-mcp`.
 - Single task delegation MCP tools:
-  - `omp_worker_run`: Asynchronously dispatch a coding task to the local OMP CLI runner.
-  - `omp_worker_cancel`: Request graceful termination or cancellation of an active task execution.
-  - `omp_worker_result`: Query status, stdout/stderr tails, logs, and artifacts of a dispatched task.
+  - `omp_run_compact`: Preferred synchronous single-task execution tool with structured summary.
+  - `omp_delegate`: Low-level asynchronous single-task dispatch returning job ID.
+  - `omp_wait`: Wait for active single-task completion with timeout.
+  - `omp_result`: Inspect full execution status, output logs, artifacts, and verification details.
+  - `omp_continue`: Send supervisory feedback and guidance to an existing session for retry/resumption.
+  - `omp_cancel`: Gracefully stop or cancel an active task execution.
 - DAG group orchestration MCP tools:
-  - `omp_worker_group_run`: Coordinate multi-task execution graphs with dependency resolution, concurrency limiting, and failure containment.
-  - `omp_worker_group_result`: Poll DAG group state, aggregated progress, and individual task metrics.
+  - `omp_run_batch_compact`: Preferred DAG batch orchestration tool with dependency resolution, concurrency limiting, and aggregated summary.
+  - `omp_wait_group`: Poll or wait for batch task group completion.
+  - `omp_cancel_group`: Request cancellation for all pending/running tasks in a group.
 - File-backed job persistence store supporting task metadata, execution logs, and structured `OMP_WORKER_RESULT` capture.
-- Cross-platform process management supporting Windows, macOS, and Linux process trees.
+- Cross-platform process management (Windows verified; macOS/Linux design targets).
 - Comprehensive test suite covering MCP handlers, DAG orchestration, process cancellation, and end-to-end task execution.

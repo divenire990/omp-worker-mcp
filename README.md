@@ -45,7 +45,7 @@
 - **Runtime Requirements**:
   - Node.js **>= 22.0.0** (relies on native ECMAScript Modules and standard library capabilities).
   - Users are responsible for complying with the OMP CLI license and terms applicable to their environment.
-- **Platform Support**: Compatible with Windows, macOS, and Linux environments where Node.js and the OMP CLI are operational.
+- **Platform Support**: Windows is fully verified and supported. macOS and Linux are architectural design targets; users should verify local OMP CLI availability and process management behavior.
 
 ---
 

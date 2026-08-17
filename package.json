@@ -1,6 +1,6 @@
 {
   "name": "omp-worker-mcp",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "Delegate complete coding tasks to the local OMP default model and inspect the result.",
   "license": "MIT",
