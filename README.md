@@ -4,15 +4,16 @@
 
 **Durable Model Context Protocol (MCP) server for delegating asynchronous coding tasks and DAG workflows to local Oh My Pi (OMP) CLI sub-agents.**
 
+<p align="center">
+  <a href="README.md">English</a> •
+  <a href="README.zh-CN.md">简体中文</a>
+</p>
+
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](package.json)
 [![MCP Protocol](https://img.shields.io/badge/MCP-1.30.0-orange.svg)](https://modelcontextprotocol.io/)
 
 <br />
-
-<img src="assets/hero.png" alt="omp-worker-mcp Hero Banner" width="800" />
-
-<br /><br />
 
 <img src="assets/orchestration.gif" alt="Async DAG Orchestration Flow" width="800" />
 
