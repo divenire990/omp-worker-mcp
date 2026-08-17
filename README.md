@@ -1,6 +1,37 @@
-# OMP Worker MCP (`omp-worker-mcp`)
+<div align="center">
 
-A local **stdio Model Context Protocol (MCP)** server that enables AI coding assistants (such as OpenAI Codex, Claude Desktop, Cursor, etc.) to delegate single or batched multi-task coding jobs to a local **Oh My Pi (OMP)** CLI instance asynchronously.
+# omp-worker-mcp
+
+**Durable Model Context Protocol (MCP) server for delegating asynchronous coding tasks and DAG workflows to local Oh My Pi (OMP) CLI sub-agents.**
+
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](package.json)
+[![MCP Protocol](https://img.shields.io/badge/MCP-1.30.0-orange.svg)](https://modelcontextprotocol.io/)
+
+<br />
+
+<img src="assets/hero.png" alt="omp-worker-mcp Hero Banner" width="800" />
+
+<br /><br />
+
+<img src="assets/orchestration.gif" alt="Async DAG Orchestration Flow" width="800" />
+
+<p align="center">
+  <em>Asynchronous task execution, DAG dependency resolution, path ownership isolation, and structured result verification.</em>
+</p>
+
+[Quick Start](#installation--quick-start) • [Configuration](#configuration) • [Available Tools](#available-mcp-tools) • [Safety Contract](#task-safety--ownership-contract) • [Upstream Attribution](#upstream-attribution--disclaimer)
+
+</div>
+
+---
+
+## Key Highlights
+
+- ⚡ **Asynchronous Delegated Execution**: Offload heavy coding, refactoring, and exploration tasks to background OMP worker instances without blocking your main conversation session.
+- 🔀 **Topological DAG Orchestration**: Execute interdependent batch tasks with automatic topological sorting, concurrency control, and dependency propagation.
+- 🛡️ **Workspace Path Isolation**: Enforce explicit write-path boundaries and prevent overlapping file modifications between concurrent tasks.
+- 🔍 **Supervised Resumption & Envelopes**: Inspect interim logs in real time, extract structured JSON outcome envelopes, and supply supervisory guidance to retry or adjust tasks.
 
 ---
 
@@ -16,19 +47,6 @@ A local **stdio Model Context Protocol (MCP)** server that enables AI coding ass
 
 ---
 
-## Repository Metadata
-
-For GitHub repository setup:
-
-- **Repository Name**: `omp-worker-mcp`
-- **Description**: `Model Context Protocol (MCP) server for delegating asynchronous coding tasks and DAG batch workflows to local Oh My Pi (OMP) CLI sub-agents.`
-- **Topics**: `mcp`, `model-context-protocol`, `oh-my-pi`, `omp`, `subagent`, `coding-agent`, `dag-orchestration`, `async-worker`, `task-delegation`
-- **Social Preview Design**:
-  - **Header / Title**: `omp-worker-mcp`
-  - **Subtitle / Tagline**: `Asynchronous Coding Sub-Agent & DAG Orchestrator for Oh My Pi CLI`
-  - **Highlights**: `Stdio MCP Server` | `DAG Task Batches` | `Path Ownership Isolation` | `Continuous Supervision`
----
-
 ## Features
 
 - **Asynchronous Delegated Execution**: Launch independent sub-agent coding tasks without blocking the main conversational session.
@@ -39,11 +57,12 @@ For GitHub repository setup:
 
 ---
 
-## Installation & Building
+## Installation & Quick Start
 
 ```bash
-# 1. Clone or copy the repository
-cd /path/to/omp-worker-mcp
+# 1. Clone the repository
+git clone https://github.com/divenire990/omp-worker-mcp.git
+cd omp-worker-mcp
 
 # 2. Install dependencies
 npm ci
@@ -51,7 +70,7 @@ npm ci
 # 3. Build TypeScript to dist/
 npm run build
 
-# 4. Run full test suite
+# 4. Run test suite
 npm test
 ```
 
@@ -98,6 +117,7 @@ args = ["C:/path/to/omp-worker-mcp/dist/index.js"]
 OMP_WORKER_OMP_COMMAND = "omp"
 OMP_WORKER_STATE_DIR = "C:/Users/YourUser/.codex/state/omp-worker"
 ```
+
 ### macOS / Linux Example
 ```toml
 [mcp_servers.omp-worker]
