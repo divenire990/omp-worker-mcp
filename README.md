@@ -39,8 +39,6 @@
 ## Upstream Attribution & Disclaimer
 
 - **External Upstream CLI**: This project interfaces with [Oh My Pi (OMP)](https://github.com/can1357/oh-my-pi), an open-source tool released under the [MIT License](https://github.com/can1357/oh-my-pi/blob/main/LICENSE).
-- **Non-Official Project**: `omp-worker-mcp` is an independent, community-developed MCP server. It is **not** an official Oh My Pi project and is not affiliated with or endorsed by the upstream OMP maintainers.
-- **No Bundling / No Distribution**: This project **does not bundle, package, link, or distribute the OMP CLI binary or its source code**. It solely executes the user's locally installed, external OMP CLI binary via process invocation (`OMP_WORKER_OMP_COMMAND`).
 - **User Prerequisites**:
   - Node.js **>= 22.0.0**.
   - Users must install and configure their own local instance of the OMP CLI.

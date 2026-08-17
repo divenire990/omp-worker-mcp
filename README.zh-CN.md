@@ -39,8 +39,6 @@
 ## 上游归属与免责声明
 
 - **外部上游 CLI**：本项目调用 [Oh My Pi (OMP)](https://github.com/can1357/oh-my-pi)，该上游开源工具基于 [MIT 许可证](https://github.com/can1357/oh-my-pi/blob/main/LICENSE) 发布。
-- **非官方独立项目**：`omp-worker-mcp` 是一个由社区独立开发的 MCP 服务器，**并非** Oh My Pi 官方项目，亦未获得上游 OMP 维护者的关联或背书。
-- **不打包 / 不分发**：本项目**绝不打包、捆绑、链接或分发 OMP CLI 的可执行二进制文件或源代码**。本项目仅通过进程调用 (`OMP_WORKER_OMP_COMMAND`) 执行用户环境中已自行安装的外部 OMP CLI。
 - **用户前置要求**：
   - Node.js **>= 22.0.0**。
   - 用户需在本地自行安装并配置好 OMP CLI 运行环境。
