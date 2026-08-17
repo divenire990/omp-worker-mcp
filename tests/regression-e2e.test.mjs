@@ -134,16 +134,40 @@ test("E2E 2: Fast batch completes within initial wait_seconds and returns final 
       },
     });
 
-    const structured = res.structuredContent;
-    assert.ok(structured);
-    assert.equal(structured.status, "completed", "Fast batch should complete within initial wait");
-    assert.ok(structured.group_id);
+    let structured = res.structuredContent;
+    assert.ok(structured, "Response must include structuredContent");
+    assert.ok(structured.group_id, "Response must include group_id");
+    assert.equal(structured.total_tasks, 2);
+
+    if (structured.status === "running") {
+      assert.equal(structured.tasks, undefined, "Running status must omit tasks array");
+      const waitRes = await client.callTool({
+        name: "omp_wait_group",
+        arguments: {
+          group_id: structured.group_id,
+          wait_seconds: 10,
+        },
+      });
+      structured = waitRes.structuredContent;
+      assert.ok(structured, "Wait call should return structuredContent");
+    }
+
+    assert.equal(structured.status, "completed", "Batch must reach completed status");
     assert.equal(structured.total_tasks, 2);
     assert.equal(structured.completed_tasks, 2);
-    assert.ok(Array.isArray(structured.tasks));
+    assert.equal(structured.failed_tasks ?? 0, 0);
+    assert.equal(structured.cancelled_tasks ?? 0, 0);
+    assert.equal(structured.blocked_tasks ?? 0, 0);
+    assert.ok(Array.isArray(structured.tasks), "Completed group must return aggregated tasks array");
     assert.equal(structured.tasks.length, 2);
     assert.equal(structured.tasks[0].id, "fast-a");
     assert.equal(structured.tasks[1].id, "fast-b");
+    for (const taskResult of structured.tasks) {
+      assert.equal(taskResult.status, "completed");
+      assert.ok(taskResult.summary);
+      assert.ok(Array.isArray(taskResult.artifacts));
+      assert.ok(Array.isArray(taskResult.verification));
+    }
   } finally {
     await client.close();
   }
