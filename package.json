@@ -4,6 +4,22 @@
   "type": "module",
   "description": "Delegate complete coding tasks to the local OMP default model and inspect the result.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/divenire990/omp-worker-mcp.git"
+  },
+  "homepage": "https://github.com/divenire990/omp-worker-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/divenire990/omp-worker-mcp/issues"
+  },
+  "main": "dist/index.js",
+  "bin": {
+    "omp-worker-mcp": "./bin/omp-worker-mcp.mjs"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -17,11 +33,13 @@
   ],
   "files": [
     "dist",
+    "bin",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
     "test": "npm run build && node --test tests/*.test.mjs",
     "start": "node dist/index.js"
   },
