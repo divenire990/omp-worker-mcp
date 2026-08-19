@@ -13,7 +13,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](package.json)
 [![CI](https://github.com/divenire990/omp-worker-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/divenire990/omp-worker-mcp/actions/workflows/ci.yml)
 [![MCP Protocol](https://img.shields.io/badge/MCP-1.30.0-orange.svg)](https://modelcontextprotocol.io/)
-[![M8ven Score](https://m8ven.ai/badge/mcp/divenire990-omp-worker-mcp-4fc9xm)](https://m8ven.ai/mcp/divenire990-omp-worker-mcp-4fc9xm)
+[![M8ven Score](https://m8ven.ai/badge/mcp/divenire990-omp-worker-mcp-4fc9xm?v=4dd1b4cec6489cf043b8630c80138c73)](https://m8ven.ai/mcp/divenire990-omp-worker-mcp-4fc9xm)
 
 <br />
 
