@@ -23,7 +23,7 @@
   <em>异步任务执行、DAG 依赖解析、路径所有权隔离与结构化结果校验。</em>
 </p>
 
-[快速开始](#安装与快速开始) • [最小配置](#最小-mcp-配置) • [推荐入口](#推荐接入入口) • [安全约束](#任务安全与所有权约束) • [平台支持](#平台支持与支持边界) • [文档中心](docs/README.zh-CN.md)
+[快速开始](#安装与快速开始) • [推荐入口](#推荐接入入口) • [安全约束](#任务安全与所有权约束) • [平台支持](#平台支持与支持边界) • [文档中心](docs/README.zh-CN.md)
 
 </div>
 
@@ -44,7 +44,7 @@
 ## 安装与快速开始
 
 ### 1. 安装 OMP
-前往 [Oh My Pi (OMP) 官方项目](https://github.com/can1357/oh-my-pi) 安装 OMP（要求 Node.js `>= 22.0.0`）。
+前往 [Oh My Pi (OMP) 官方项目](https://github.com/can1357/oh-my-pi) 安装 OMP。（注意：运行 `omp-worker-mcp` 需要本地 Node.js `>= 22.0.0`。）
 
 ### 2. 验证 OMP 可用性
 在终端中运行以下命令，验证 OMP CLI 是否可用：
@@ -72,6 +72,8 @@ omp --version
 }
 ```
 
+*关于 Codex (`config.toml`)、Claude Code CLI、WorkBuddy、Cursor、VS Code 及其他客户端的完整配置，请参阅 [客户端接入与配置指南](docs/client-configurations.zh-CN.md)。*
+
 ### 4. 执行安全的首次任务
 在主控 Harness 中调用 `omp_run_compact`，传入工作区的绝对路径，执行一次只读的仓库检查以验证端到端委托链路：
 
@@ -84,15 +86,7 @@ omp --version
 
 ---
 
-### 其他安装方式（可选）
-
-#### 全局安装（可选）
-
-```bash
-npm install -g omp-worker-mcp
-```
-
-#### 从源码编译
+### 开发者替代方式：从源码编译
 
 ```bash
 git clone https://github.com/divenire990/omp-worker-mcp.git
@@ -101,29 +95,6 @@ npm ci
 npm run build
 npm test
 ```
----
-
-## 最小 MCP 配置
-
-在您的主控 Harness 的 `mcpServers` 配置中添加标准 stdio 服务定义：
-
-```json
-{
-  "mcpServers": {
-    "omp-worker": {
-      "command": "npx",
-      "args": ["-y", "omp-worker-mcp"],
-      "env": {
-        "OMP_WORKER_OMP_COMMAND": "omp"
-      }
-    }
-  }
-}
-```
-
-*关于 Codex (`config.toml`)、Claude Code CLI、WorkBuddy、Cursor、VS Code 及其他客户端的完整配置，请参阅 [客户端接入与配置指南](docs/client-configurations.zh-CN.md)。*
-
----
 
 ## 推荐接入入口
 

@@ -23,7 +23,7 @@
   <em>Asynchronous task execution, DAG dependency resolution, path ownership isolation, and structured result verification.</em>
 </p>
 
-[Quick Start](#installation--quick-start) • [Minimal Config](#minimal-mcp-configuration) • [Entrypoints](#recommended-entrypoints) • [Safety Contract](#task-safety--ownership) • [Platform Support](#platform-support--boundaries) • [Docs Hub](docs/README.md)
+[Quick Start](#installation--quick-start) • [Entrypoints](#recommended-entrypoints) • [Safety Contract](#task-safety--ownership) • [Platform Support](#platform-support--boundaries) • [Docs Hub](docs/README.md)
 
 </div>
 
@@ -44,7 +44,7 @@
 ## Installation & Quick Start
 
 ### 1. Install OMP
-Install [Oh My Pi (OMP) from its official project](https://github.com/can1357/oh-my-pi) (requires Node.js `>= 22.0.0`).
+Install [Oh My Pi (OMP) from its official project](https://github.com/can1357/oh-my-pi). (Note: running `omp-worker-mcp` requires local Node.js `>= 22.0.0`.)
 
 ### 2. Verify OMP Reachability
 Verify that the OMP CLI is reachable in your environment:
@@ -72,6 +72,8 @@ Add `omp-worker-mcp` to your host harness's stdio `mcpServers` configuration (`n
 }
 ```
 
+*For detailed client configurations covering Codex (`config.toml`), Claude Code CLI, WorkBuddy, Cursor, VS Code, and more, see [Client Configurations](docs/client-configurations.md).*
+
 ### 4. Verify with a Safe First Task
 Invoke `omp_run_compact` from your host harness with an absolute workspace path to verify the full delegation chain with a read-only repository inspection:
 
@@ -84,15 +86,7 @@ Invoke `omp_run_compact` from your host harness with an absolute workspace path 
 
 ---
 
-### Alternative Installation Options
-
-#### Global Installation (Optional)
-
-```bash
-npm install -g omp-worker-mcp
-```
-
-#### Building from Source
+### Developer Alternative: Building from Source
 
 ```bash
 git clone https://github.com/divenire990/omp-worker-mcp.git
@@ -101,29 +95,6 @@ npm ci
 npm run build
 npm test
 ```
----
-
-## Minimal MCP Configuration
-
-Add `omp-worker-mcp` to your host harness's `mcpServers` configuration using standard stdio transport:
-
-```json
-{
-  "mcpServers": {
-    "omp-worker": {
-      "command": "npx",
-      "args": ["-y", "omp-worker-mcp"],
-      "env": {
-        "OMP_WORKER_OMP_COMMAND": "omp"
-      }
-    }
-  }
-}
-```
-
-*For detailed client configurations covering Codex (`config.toml`), Claude Code CLI, WorkBuddy, Cursor, VS Code, and more, see [Client Configurations](docs/client-configurations.md).*
-
----
 
 ## Recommended Entrypoints
 
