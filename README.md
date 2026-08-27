@@ -74,14 +74,11 @@ Add `omp-worker-mcp` to your host harness's stdio `mcpServers` configuration (`n
 
 *For detailed client configurations covering Codex (`config.toml`), Claude Code CLI, WorkBuddy, Cursor, VS Code, and more, see [Client Configurations](docs/client-configurations.md).*
 
-### 4. Verify with a Safe First Task
-Invoke `omp_run_compact` from your host harness with an absolute workspace path to verify the full delegation chain with a read-only repository inspection:
+### 4. Send Your First Prompt
+After restarting your host harness, paste a read-only inspection prompt directly into your conversation to verify the full delegation chain:
 
-```json
-{
-  "cwd": "/absolute/path/to/workspace",
-  "goal": "Inspect the repository structure, verify dependencies, and report top-level directories. Do not modify any files."
-}
+```text
+Please perform a read-only inspection of the current workspace, review the project structure and dependencies, and provide a concise summary report. Do not modify any files.
 ```
 
 ---
@@ -98,10 +95,10 @@ npm test
 
 ## Recommended Entrypoints
 
-Choose your starting point based on workflow complexity:
+A capable host harness automatically selects the appropriate high-level execution entrypoint based on task complexity (users do not need to invoke these internal tools manually):
 
-- **`omp_run_compact` (Single Task)**: Recommended entrypoint for single tasks. Delegates a discrete coding or research assignment, waits up to `wait_seconds` for execution, and returns a compact structured summary and artifact list.
-- **`omp_run_batch_compact` (Multi-Task / DAG)**: Recommended entrypoint for multi-task workflows. Dispatches interdependent tasks with explicit dependency graphs and concurrency limits, waiting for aggregated results.
+- **`omp_run_compact` (Single Task)**: High-level single-task entrypoint selected by the host to delegate a discrete coding or research assignment, wait up to `wait_seconds` for execution, and return a compact structured summary and artifact list.
+- **`omp_run_batch_compact` (Multi-Task / DAG)**: High-level multi-task entrypoint selected by the host to dispatch interdependent tasks with explicit dependency graphs and concurrency limits, waiting for aggregated results.
 
 *For lower-level primitives (`omp_delegate`, `omp_wait`, `omp_result`, `omp_continue`, `omp_cancel`, `omp_wait_group`, `omp_cancel_group`) and complete schemas, consult the [Tool Reference](docs/tool-reference.md).*
 

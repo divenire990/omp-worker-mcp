@@ -83,7 +83,7 @@ The standard supervision lifecycle consists of six distinct phases:
 
 ### Example 1: Read-Only Exploration
 - **User Intent / Prompt**: *"Investigate the retention and cleanup mechanism in this repository, identify all affected files, and report findings without editing code."*
-- **Host Action**: Invokes `omp_run_compact` with `access: "read_only"`, setting acceptance criteria around identifying relevant files and verifying no workspace modifications occurred.
+- **Host Action**: Invokes `omp_run_compact`, conveying read-only intent directly in the task's `goal` and `acceptance` criteria (e.g., verifying relevant files are identified while explicitly ensuring no workspace files are modified).
 
 ### Example 2: Single Implementation with In-Session Supervisory Correction
 - **User Intent / Prompt**: *"Implement exponential backoff retry in the process runner and ensure all unit tests pass."*

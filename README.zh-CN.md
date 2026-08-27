@@ -74,14 +74,11 @@ omp --version
 
 *关于 Codex (`config.toml`)、Claude Code CLI、WorkBuddy、Cursor、VS Code 及其他客户端的完整配置，请参阅 [客户端接入与配置指南](docs/client-configurations.zh-CN.md)。*
 
-### 4. 执行安全的首次任务
-在主控 Harness 中调用 `omp_run_compact`，传入工作区的绝对路径，执行一次只读的仓库检查以验证端到端委托链路：
+### 4. 发送第一条提示词
+重启宿主 Harness 后，在对话中直接发送一条只读检查提示词，验证端到端委托链路：
 
-```json
-{
-  "cwd": "/absolute/path/to/workspace",
-  "goal": "检查仓库目录结构、校验依赖并报告顶层目录，不得修改任何文件。"
-}
+```text
+请对当前工作区进行一次只读检查，梳理目录结构与依赖配置，并给出一份简要概览报告。请不要修改任何文件。
 ```
 
 ---
@@ -98,10 +95,10 @@ npm test
 
 ## 推荐接入入口
 
-根据任务复杂度选择合适的操作入口：
+具备 MCP 工具调用能力的宿主 Harness 会根据任务复杂度自动选择合适的执行路径（无需用户手动选择或调用内部工具）：
 
-- **`omp_run_compact`（单任务推荐）**：便捷入口，委托单个编码或调研任务并在 `wait_seconds` 内等待执行完成，返回压缩摘要与产物列表。
-- **`omp_run_batch_compact`（多任务与 DAG 推荐）**：批量与工作流推荐入口，创建并调度具有依赖关系的有向无环图批量任务，控制并发度并等待全部完成返回汇总结果。
+- **`omp_run_compact`（单任务推荐）**：由宿主选择的高层单任务入口，委托单个编码或调研任务并在 `wait_seconds` 内等待执行完成，返回压缩摘要与产物列表。
+- **`omp_run_batch_compact`（多任务与 DAG 推荐）**：由宿主选择的高层多任务与工作流入口，创建并调度具有依赖关系的有向无环图批量任务，控制并发度并等待全部完成返回汇总结果。
 
 *有关底层原子工具（`omp_delegate`、`omp_wait`、`omp_result`、`omp_continue`、`omp_cancel`、`omp_wait_group`、`omp_cancel_group`）与完整参数规范，请查阅 [工具参考与安全约束](docs/tool-reference.zh-CN.md)。*
 
