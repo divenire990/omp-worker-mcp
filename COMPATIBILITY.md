@@ -98,6 +98,6 @@ To ensure smooth upgrades for downstream agents, workflows, and integrations:
 
 ### Operating Systems
 - **Windows** (win32): Fully verified and supported in production and automated test suites.
-- **macOS** (Darwin) & **Linux** (x86_64, aarch64): Architectural design targets; users should verify local OMP CLI availability and platform-specific process management behaviors.
-### External Dependencies
+- **macOS** (Darwin / Apple Silicon): Verified with real OMP CLI end-to-end integration and automated CI quality gates.
+- **Linux** (x86_64, aarch64): Architectural design target; awaiting formal platform verification with upstream OMP CLI in production environments.
 - Requires a local `omp` executable available in the system `PATH` or configured explicitly via environment variables.

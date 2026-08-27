@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -23,6 +23,40 @@ async function createTestClient(stateRoot) {
   await client.connect(transport);
   return { client, transport };
 }
+async function readPeakConcurrency(trackerDir) {
+  const entries = await readdir(trackerDir);
+  const intervals = [];
+  for (const entry of entries) {
+    if (entry.endsWith(".json")) {
+      try {
+        const raw = JSON.parse(await readFile(path.join(trackerDir, entry), "utf8"));
+        if (typeof raw.start === "number" && typeof raw.end === "number") {
+          intervals.push(raw);
+        }
+      } catch {}
+    }
+  }
+
+  const events = [];
+  for (const interval of intervals) {
+    events.push({ time: interval.start, delta: 1 });
+    events.push({ time: interval.end, delta: -1 });
+  }
+
+  events.sort((a, b) => {
+    if (a.time !== b.time) return a.time - b.time;
+    return a.delta - b.delta;
+  });
+
+  let current = 0;
+  let peak = 0;
+  for (const ev of events) {
+    current += ev.delta;
+    if (current > peak) peak = current;
+  }
+  return { peak, total: intervals.length };
+}
+
 
 test("E2E 1: Slow DAG exceeding initial wait, cross-client reconnection, compact wait and single final aggregation", async () => {
   const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-e2e-slow-dag-"));
@@ -213,8 +247,8 @@ test("E2E 3: Partial failure blocks dependent tasks while independent siblings f
 
 test("E2E 4: Concurrency cap is strictly enforced across batch execution", async () => {
   const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-e2e-concurrency-"));
-  const trackerFile = path.join(stateRoot, "tracker.json");
-  await writeFile(trackerFile, JSON.stringify({ current: 0, peak: 0 }), "utf8");
+  const trackerDir = path.join(stateRoot, "concurrency-track");
+  await mkdir(trackerDir, { recursive: true });
 
   const { client } = await createTestClient(stateRoot);
   try {
@@ -225,10 +259,10 @@ test("E2E 4: Concurrency cap is strictly enforced across batch execution", async
         max_parallel: 2,
         wait_seconds: 15,
         tasks: [
-          { id: "t1", goal: `T1 DELAY_TEST_500 TRACK_CONCURRENCY:${trackerFile}`, access: "read_only" },
-          { id: "t2", goal: `T2 DELAY_TEST_500 TRACK_CONCURRENCY:${trackerFile}`, access: "read_only" },
-          { id: "t3", goal: `T3 DELAY_TEST_500 TRACK_CONCURRENCY:${trackerFile}`, access: "read_only" },
-          { id: "t4", goal: `T4 DELAY_TEST_500 TRACK_CONCURRENCY:${trackerFile}`, access: "read_only" },
+          { id: "t1", goal: `T1 DELAY_TEST_500 TRACK_CONCURRENCY:${trackerDir}`, access: "read_only" },
+          { id: "t2", goal: `T2 DELAY_TEST_500 TRACK_CONCURRENCY:${trackerDir}`, access: "read_only" },
+          { id: "t3", goal: `T3 DELAY_TEST_500 TRACK_CONCURRENCY:${trackerDir}`, access: "read_only" },
+          { id: "t4", goal: `T4 DELAY_TEST_500 TRACK_CONCURRENCY:${trackerDir}`, access: "read_only" },
         ],
       },
     });
@@ -237,8 +271,10 @@ test("E2E 4: Concurrency cap is strictly enforced across batch execution", async
     assert.equal(structured?.status, "completed");
     assert.equal(structured?.completed_tasks, 4);
 
-    const tracker = JSON.parse(await readFile(trackerFile, "utf8"));
-    assert.ok(tracker.peak <= 2, `Peak concurrency should not exceed max_parallel (2), got ${tracker.peak}`);
+    const { peak, total } = await readPeakConcurrency(trackerDir);
+    assert.equal(total, 4);
+    assert.ok(peak <= 2, `Peak concurrency should not exceed max_parallel (2), got ${peak}`);
+    assert.ok(peak >= 1, `Peak concurrency should be at least 1, got ${peak}`);
   } finally {
     await client.close();
   }

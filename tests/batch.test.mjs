@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -23,11 +23,45 @@ async function createTestClient(stateRoot) {
   await client.connect(transport);
   return { client, transport };
 }
+async function readPeakConcurrency(trackerDir) {
+  const entries = await readdir(trackerDir);
+  const intervals = [];
+  for (const entry of entries) {
+    if (entry.endsWith(".json")) {
+      try {
+        const raw = JSON.parse(await readFile(path.join(trackerDir, entry), "utf8"));
+        if (typeof raw.start === "number" && typeof raw.end === "number") {
+          intervals.push(raw);
+        }
+      } catch {}
+    }
+  }
+
+  const events = [];
+  for (const interval of intervals) {
+    events.push({ time: interval.start, delta: 1 });
+    events.push({ time: interval.end, delta: -1 });
+  }
+
+  events.sort((a, b) => {
+    if (a.time !== b.time) return a.time - b.time;
+    return a.delta - b.delta;
+  });
+
+  let current = 0;
+  let peak = 0;
+  for (const ev of events) {
+    current += ev.delta;
+    if (current > peak) peak = current;
+  }
+  return { peak, total: intervals.length };
+}
+
 
 test("1. 3 independent tasks run concurrently with peak <= max_parallel", async () => {
   const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-worker-batch-test-"));
-  const trackerFile = path.join(stateRoot, "concurrency-track.json");
-  await writeFile(trackerFile, JSON.stringify({ current: 0, peak: 0 }), "utf8");
+  const trackerDir = path.join(stateRoot, "concurrency-track");
+  await mkdir(trackerDir, { recursive: true });
 
   const { client } = await createTestClient(stateRoot);
   try {
@@ -39,17 +73,17 @@ test("1. 3 independent tasks run concurrently with peak <= max_parallel", async 
         tasks: [
           {
             id: "task-1",
-            goal: `DELAY_TEST_1000 TRACK_CONCURRENCY:${trackerFile} Task 1 work`,
+            goal: `DELAY_TEST_1000 TRACK_CONCURRENCY:${trackerDir} Task 1 work`,
             access: "read_only",
           },
           {
             id: "task-2",
-            goal: `DELAY_TEST_1000 TRACK_CONCURRENCY:${trackerFile} Task 2 work`,
+            goal: `DELAY_TEST_1000 TRACK_CONCURRENCY:${trackerDir} Task 2 work`,
             access: "read_only",
           },
           {
             id: "task-3",
-            goal: `DELAY_TEST_1000 TRACK_CONCURRENCY:${trackerFile} Task 3 work`,
+            goal: `DELAY_TEST_1000 TRACK_CONCURRENCY:${trackerDir} Task 3 work`,
             access: "read_only",
           },
         ],
@@ -65,9 +99,10 @@ test("1. 3 independent tasks run concurrently with peak <= max_parallel", async 
     assert.equal(structured.tasks[1].id, "task-2");
     assert.equal(structured.tasks[2].id, "task-3");
 
-    const track = JSON.parse(await readFile(trackerFile, "utf8"));
-    assert.ok(track.peak >= 2, `Expected concurrent execution (peak >= 2), got peak=${track.peak}`);
-    assert.ok(track.peak <= 3, `Expected peak <= max_parallel (3), got peak=${track.peak}`);
+    const { peak, total } = await readPeakConcurrency(trackerDir);
+    assert.equal(total, 3);
+    assert.ok(peak >= 2, `Expected concurrent execution (peak >= 2), got peak=${peak}`);
+    assert.ok(peak <= 3, `Expected peak <= max_parallel (3), got peak=${peak}`);
   } finally {
     await client.close();
   }
@@ -105,14 +140,14 @@ test("2. max_parallel > 10 or < 1 is rejected by schema validation", async () =>
 
 test("3. Rolling pool handles >10 tasks with bounded max_parallel", async () => {
   const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-worker-batch-test-"));
-  const trackerFile = path.join(stateRoot, "concurrency-12.json");
-  await writeFile(trackerFile, JSON.stringify({ current: 0, peak: 0 }), "utf8");
+  const trackerDir = path.join(stateRoot, "concurrency-12");
+  await mkdir(trackerDir, { recursive: true });
 
   const { client } = await createTestClient(stateRoot);
   try {
     const tasks = Array.from({ length: 12 }, (_, i) => ({
       id: `task-${String(i + 1).padStart(2, "0")}`,
-      goal: `DELAY_TEST_50 TRACK_CONCURRENCY:${trackerFile} Task ${i + 1} work`,
+      goal: `DELAY_TEST_50 TRACK_CONCURRENCY:${trackerDir} Task ${i + 1} work`,
       access: "read_only",
     }));
 
@@ -136,8 +171,10 @@ test("3. Rolling pool handles >10 tasks with bounded max_parallel", async () => 
       assert.equal(structured.tasks[i].status, "completed");
     }
 
-    const track = JSON.parse(await readFile(trackerFile, "utf8"));
-    assert.ok(track.peak <= 3, `Expected peak concurrency <= 3, got peak=${track.peak}`);
+    const { peak, total } = await readPeakConcurrency(trackerDir);
+    assert.equal(total, 12);
+    assert.ok(peak <= 3, `Expected peak concurrency <= 3, got peak=${peak}`);
+    assert.ok(peak >= 1, `Expected peak concurrency >= 1, got peak=${peak}`);
   } finally {
     await client.close();
   }

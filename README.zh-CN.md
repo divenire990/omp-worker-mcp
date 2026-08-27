@@ -54,8 +54,9 @@
 - **运行环境要求**：
   - Node.js **>= 22.0.0**（依赖原生 ECMAScript Modules 与标准库能力）。
   - 用户有责任遵守适用于其自身环境的 OMP CLI 许可证及使用条款。
-- **平台支持**：Windows 环境已完整验证支持；macOS 与 Linux 为架构设计目标，需用户自行验证本地 OMP CLI 可用性及进程管理行为。
-
+- **平台支持**：
+  - **Windows** (win32) 与 **macOS** (Darwin / Apple Silicon，经由真实 Node 22+ 与 OMP CLI E2E 完整验证) 均已验证支持。
+  - **Linux** (x86_64, aarch64) 目前为架构设计目标，待在生产环境中进一步验证。
 ---
 
 ## 功能特性
@@ -70,20 +71,9 @@
 
 ## 安装与快速开始
 
-### 通过 npx 或全局 npm 安装运行
+### 当前安装方式：源码编译与本地开发
 
-无需克隆代码仓库，可直接通过 npx 运行 `omp-worker-mcp`：
-
-```bash
-# 直接通过 npx 启动
-npx omp-worker-mcp
-
-# 或全局安装后运行
-npm install -g omp-worker-mcp
-omp-worker-mcp --help
-```
-
-### 源码编译与本地开发
+在 npm 官方包正式发布上线之前，通过源码构建与运行是当前可用的使用路径：
 
 ```bash
 # 1. 克隆代码仓库
@@ -100,7 +90,18 @@ npm run build
 npm test
 ```
 
----
+### 发布后快速启动：通过 npx 或全局 npm 安装运行
+
+一旦包正式发布至 npm 注册表，您即可无需克隆仓库直接运行 `omp-worker-mcp`：
+
+```bash
+# 直接通过 npx 启动（发布后可用）
+npx omp-worker-mcp
+
+# 或全局安装后运行（发布后可用）
+npm install -g omp-worker-mcp
+omp-worker-mcp --help
+```
 
 ## MCP 客户端配置
 
@@ -108,17 +109,7 @@ npm test
 
 ### Codex 配置示例 (`config.toml`)
 
-#### 使用 npx 运行（推荐）
-```toml
-[mcp_servers.omp-worker]
-command = "npx"
-args = ["-y", "omp-worker-mcp"]
-
-[mcp_servers.omp-worker.env]
-OMP_WORKER_OMP_COMMAND = "omp"
-```
-
-#### 使用本地源码构建运行
+#### 使用本地源码构建运行（当前可用）
 ```toml
 [mcp_servers.omp-worker]
 command = "node"
@@ -128,8 +119,34 @@ args = ["/path/to/omp-worker-mcp/dist/index.js"]
 OMP_WORKER_OMP_COMMAND = "omp"
 ```
 
+#### 使用 npx 运行（待发布至 npm 后可用）
+```toml
+[mcp_servers.omp-worker]
+command = "npx"
+args = ["-y", "omp-worker-mcp"]
+
+[mcp_servers.omp-worker.env]
+OMP_WORKER_OMP_COMMAND = "omp"
+```
+
 ### Claude Desktop 配置示例 (`claude_desktop_config.json`)
 
+#### 使用本地源码构建运行（当前可用）
+```json
+{
+  "mcpServers": {
+    "omp-worker": {
+      "command": "node",
+      "args": ["/path/to/omp-worker-mcp/dist/index.js"],
+      "env": {
+        "OMP_WORKER_OMP_COMMAND": "omp"
+      }
+    }
+  }
+}
+```
+
+#### 使用 npx 运行（待发布至 npm 后可用）
 ```json
 {
   "mcpServers": {
@@ -143,8 +160,6 @@ OMP_WORKER_OMP_COMMAND = "omp"
   }
 }
 ```
-
----
 
 ## 配置说明与环境变量
 

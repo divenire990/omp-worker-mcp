@@ -1,33 +1,44 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
 const args = process.argv.slice(2);
 const promptArg = args.find((value) => value.startsWith("@"));
 const prompt = promptArg ? await readFile(promptArg.slice(1), "utf8") : "";
 
 const matchTrack = prompt.match(/TRACK_CONCURRENCY:([^\s\n]+)/);
-const trackerFile = matchTrack ? matchTrack[1] : null;
+const trackerTarget = matchTrack ? matchTrack[1] : null;
 
-function updateTracker(delta) {
-  if (!trackerFile) return;
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    try {
-      const raw = existsSync(trackerFile) ? JSON.parse(readFileSync(trackerFile, "utf8")) : { current: 0, peak: 0 };
-      raw.current = Math.max(0, (raw.current || 0) + delta);
-      if (raw.current > (raw.peak || 0)) raw.peak = raw.current;
-      writeFileSync(trackerFile, JSON.stringify(raw), "utf8");
-      break;
-    } catch {
-      // brief busy-wait retry for concurrent file access
-      const end = Date.now() + 5;
-      while (Date.now() < end) {}
+let trackerDir = null;
+if (trackerTarget) {
+  try {
+    if (existsSync(trackerTarget) && statSync(trackerTarget).isDirectory()) {
+      trackerDir = trackerTarget;
+    } else if (trackerTarget.endsWith(".json")) {
+      trackerDir = trackerTarget.replace(/\.json$/, "_dir");
+      mkdirSync(trackerDir, { recursive: true });
+    } else {
+      trackerDir = trackerTarget;
+      mkdirSync(trackerDir, { recursive: true });
     }
+  } catch {
+    trackerDir = trackerTarget;
   }
 }
 
-// Track entrance before any delay or workload
-if (trackerFile) {
-  updateTracker(1);
+const runId = `${process.pid}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const startTime = Date.now();
+
+function recordExit() {
+  if (!trackerDir) return;
+  const endTime = Math.max(startTime, Date.now());
+  try {
+    writeFileSync(
+      path.join(trackerDir, `${runId}.json`),
+      JSON.stringify({ pid: process.pid, start: startTime, end: endTime }),
+      "utf8",
+    );
+  } catch {}
 }
 
 const matchDelay = prompt.match(/DELAY_TEST_(\d+)/);
@@ -39,9 +50,7 @@ if (matchDelay) {
 }
 
 if (prompt.includes("FAIL_TEST")) {
-  if (trackerFile) {
-    updateTracker(-1);
-  }
+  recordExit();
   console.error("Simulated task failure");
   process.exit(1);
 }
@@ -66,6 +75,4 @@ console.log(
 );
 console.log(JSON.stringify({ type: "agent_end", isTerminal: true }));
 
-if (trackerFile) {
-  updateTracker(-1);
-}
+recordExit();

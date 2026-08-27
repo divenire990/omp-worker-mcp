@@ -55,8 +55,9 @@ In the author's daily local workflow, `omp-worker-mcp` is configured with **Gemi
 - **Runtime Requirements**:
   - Node.js **>= 22.0.0** (relies on native ECMAScript Modules and standard library capabilities).
   - Users are responsible for complying with the OMP CLI license and terms applicable to their environment.
-- **Platform Support**: Windows is fully verified and supported. macOS and Linux are architectural design targets; users should verify local OMP CLI availability and process management behavior.
-
+- **Platform Support**:
+  - **Windows** (win32) and **macOS** (Darwin / Apple Silicon, verified with real Node 22+ and OMP CLI E2E testing) are fully verified and supported.
+  - **Linux** (x86_64, aarch64) is an architectural design target and remains to be verified in production environments.
 ---
 
 ## Features
@@ -71,20 +72,9 @@ In the author's daily local workflow, `omp-worker-mcp` is configured with **Gemi
 
 ## Installation & Quick Start
 
-### Running via npx or global npm install
+### Current Installation: Building from Source
 
-You can run `omp-worker-mcp` directly without cloning the repository:
-
-```bash
-# Run directly via npx
-npx omp-worker-mcp
-
-# Or install globally
-npm install -g omp-worker-mcp
-omp-worker-mcp --help
-```
-
-### Building from Source
+Before the package is published to the npm registry, building and running from source is the currently available path:
 
 ```bash
 # 1. Clone the repository
@@ -101,7 +91,18 @@ npm run build
 npm test
 ```
 
----
+### Post-Publish Quick Start: Running via npx or global npm install
+
+Once published to the npm registry, you can run `omp-worker-mcp` directly without cloning the repository:
+
+```bash
+# Run directly via npx (post-publish)
+npx omp-worker-mcp
+
+# Or install globally (post-publish)
+npm install -g omp-worker-mcp
+omp-worker-mcp --help
+```
 
 ## MCP Client Configuration
 
@@ -109,17 +110,7 @@ npm test
 
 ### Codex Configuration (`config.toml`)
 
-#### Using npx (Recommended)
-```toml
-[mcp_servers.omp-worker]
-command = "npx"
-args = ["-y", "omp-worker-mcp"]
-
-[mcp_servers.omp-worker.env]
-OMP_WORKER_OMP_COMMAND = "omp"
-```
-
-#### Using Local Source Build
+#### Using Local Source Build (Currently Available)
 ```toml
 [mcp_servers.omp-worker]
 command = "node"
@@ -129,8 +120,34 @@ args = ["/path/to/omp-worker-mcp/dist/index.js"]
 OMP_WORKER_OMP_COMMAND = "omp"
 ```
 
+#### Using npx (Available Once Published to npm)
+```toml
+[mcp_servers.omp-worker]
+command = "npx"
+args = ["-y", "omp-worker-mcp"]
+
+[mcp_servers.omp-worker.env]
+OMP_WORKER_OMP_COMMAND = "omp"
+```
+
 ### Claude Desktop Configuration (`claude_desktop_config.json`)
 
+#### Using Local Source Build (Currently Available)
+```json
+{
+  "mcpServers": {
+    "omp-worker": {
+      "command": "node",
+      "args": ["/path/to/omp-worker-mcp/dist/index.js"],
+      "env": {
+        "OMP_WORKER_OMP_COMMAND": "omp"
+      }
+    }
+  }
+}
+```
+
+#### Using npx (Available Once Published to npm)
 ```json
 {
   "mcpServers": {

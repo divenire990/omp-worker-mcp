@@ -11,8 +11,12 @@ permissions:
 
 jobs:
   build-and-test:
-    name: Node.js 22 Quality Gate
-    runs-on: ubuntu-latest
+    name: Node.js 22 Quality Gate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

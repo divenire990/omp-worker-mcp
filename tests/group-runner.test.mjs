@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -16,6 +16,40 @@ function createEnv(stateRoot) {
     OMP_WORKER_OMP_COMMAND: process.execPath,
     OMP_WORKER_OMP_PREFIX_ARGS: JSON.stringify([path.join(projectRoot, "tests", "fake-omp.mjs")]),
   };
+}
+
+async function readPeakConcurrency(trackerDir) {
+  const entries = await readdir(trackerDir);
+  const intervals = [];
+  for (const entry of entries) {
+    if (entry.endsWith(".json")) {
+      try {
+        const raw = JSON.parse(await readFile(path.join(trackerDir, entry), "utf8"));
+        if (typeof raw.start === "number" && typeof raw.end === "number") {
+          intervals.push(raw);
+        }
+      } catch {}
+    }
+  }
+
+  const events = [];
+  for (const interval of intervals) {
+    events.push({ time: interval.start, delta: 1 });
+    events.push({ time: interval.end, delta: -1 });
+  }
+
+  events.sort((a, b) => {
+    if (a.time !== b.time) return a.time - b.time;
+    return a.delta - b.delta;
+  });
+
+  let current = 0;
+  let peak = 0;
+  for (const ev of events) {
+    current += ev.delta;
+    if (current > peak) peak = current;
+  }
+  return { peak, total: intervals.length };
 }
 
 async function createTestGroup(stateRoot, overrides = {}) {
@@ -132,13 +166,13 @@ test("1. group-runner runs as standalone Node process and completes 3-step DAG i
 test("2. Concurrency cap (maxParallel) is strictly respected across tasks", async () => {
   const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-group-test-2-"));
   const env = createEnv(stateRoot);
-  const trackerFile = path.join(stateRoot, "concurrency-track.json");
-  await writeFile(trackerFile, JSON.stringify({ current: 0, peak: 0 }), "utf8");
+  const trackerDir = path.join(stateRoot, "concurrency-track");
+  await mkdir(trackerDir, { recursive: true });
 
   const tasks = Array.from({ length: 4 }, (_, i) => ({
     id: `task-${i + 1}`,
     status: "ready",
-    goal: `Task ${i + 1} DELAY_TEST_400 TRACK_CONCURRENCY:${trackerFile}`,
+    goal: `Task ${i + 1} DELAY_TEST_400 TRACK_CONCURRENCY:${trackerDir}`,
     acceptance: [`task ${i + 1} done`],
     dependsOn: [],
     access: "read_only",
@@ -162,9 +196,10 @@ test("2. Concurrency cap (maxParallel) is strictly respected across tasks", asyn
   const finalGroup = JSON.parse(await readFile(groupFile, "utf8"));
   assert.equal(finalGroup.status, "completed");
 
-  const trackData = JSON.parse(await readFile(trackerFile, "utf8"));
-  assert.ok(trackData.peak <= 2, `Peak concurrency ${trackData.peak} exceeded maxParallel 2`);
-  assert.ok(trackData.peak >= 1, `Peak concurrency was ${trackData.peak}`);
+  const { peak, total } = await readPeakConcurrency(trackerDir);
+  assert.equal(total, 4);
+  assert.ok(peak <= 2, `Peak concurrency ${peak} exceeded maxParallel 2`);
+  assert.ok(peak >= 1, `Peak concurrency was ${peak}`);
 });
 
 test("3. Partial failure marks dependent tasks blocked while independent siblings finish", async () => {
