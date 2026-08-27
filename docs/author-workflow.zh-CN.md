@@ -19,7 +19,7 @@
 启用 `omp-worker-mcp` 包含三个清晰分工、层层递进的核心层级：
 
 1. **工具可用性（MCP 服务器注册）**：在宿主 Harness 中配置 `omp-worker-mcp`（例如通过 `config.toml`、`mcp.json` 或 CLI），连接并启动服务端进程，向宿主暴露其工具元数据声明（`omp_run_compact`、`omp_run_batch_compact` 等）。
-2. **直接工具命名空间访问（Codex 环境层）**：专属于 Codex 宿主环境，注册 MCP 服务仅将工具列入可用集，而直接工具命名空间访问由 `~/.codex/config.toml` 中的 `direct_only_tool_namespaces` 配置项控制。将 `"mcp__omp_worker"` 添加至此列表（类比 FastCtx 的 `"mcp__fastctx"`），可使 Codex 会话无障碍地直接调用该命名空间下的工具。*注：此配置项为 Codex 专属机制，其他宿主 Harness 不使用也不需要该配置。*
+2. **直接工具命名空间访问（Codex 环境层）**：专属于 Codex 宿主环境，注册 MCP 服务仅将工具列入可用集，而直接工具命名空间访问由 `~/.codex/config.toml` 中的 `direct_only_tool_namespaces` 配置项控制。将 `"mcp__omp_worker"` 添加至此列表，可使 Codex 会话无障碍地直接调用该命名空间下的工具。*注：此配置项为 Codex 专属机制，其他宿主 Harness 不使用也不需要该配置。*
 3. **选择策略（项目级与系统指令）**：注册服务并开放直接命名空间访问使工具“可用且可直接调用”，但并不自动决定宿主 LLM *何时*与*为何*优先选择它而非内置的读写工具。通过提供项目级指令（如 `AGENTS.md` 或 `CLAUDE.md`），可以建立清晰的委派启发规则，引导宿主稳定地将复杂的多步骤执行任务下发给后台 Worker。
 
 > **前置条件**：
@@ -31,10 +31,10 @@
 
 1. 打开用户配置文件：`~/.codex/config.toml`（Windows 路径通常为 `C:\Users\<username>\.codex\config.toml`）。
 2. 找到（或新建）`direct_only_tool_namespaces` 配置项。
-3. **保留现有命名空间**：请务必保留列表中已存在的其他条目（如 `"mcp__fastctx"`），切勿直接覆盖；将 `"mcp__omp_worker"` 追加至数组中：
+3. **保留现有命名空间**：请将 `"mcp__omp_worker"` 追加至现有列表中，同时保留您已配置的任何其他无关条目，切勿直接覆盖丢弃：
    ```toml
    # 保留现有命名空间配置并加入 mcp__omp_worker
-   direct_only_tool_namespaces = ["mcp__fastctx", "mcp__omp_worker"]
+   direct_only_tool_namespaces = ["mcp__omp_worker"]
    ```
 4. 重启 Codex 使新配置生效。
 5. （可选）执行第 3 节中的 [一次性验证提示词](#一次性验证提示词) 验证端到端调用链路。
@@ -67,7 +67,7 @@
 ## 执行策略启发规则
 
 1. **宿主直接处理**：对于简单问答、架构讨论、快速单文件查看或局部微调小修，直接使用宿主原生内置工具（直接读写、终端命令）。
-2. **单任务实质性开发 (`omp_run_compact`)**：对于多步骤编码、重构或探索性技术调研，先进行有界的只读理解以明确需求与边界，然后通过 `omp_run_compact` 委派执行，并附带清晰的 `goal` 与 `acceptance` 验收标准。
+2. **单任务实质性开发 (`omp_run_compact`)**：对于多步骤编码、重构或探索性技术调研，先进行有界的只读理解以明确需求与边界，然后通过 `omp_run_compact` 委派执行，并附带清晰的 `goal` 与 `acceptance` 验收标准（只读或不修改文件的意图直接在验收标准中表述）。
 3. **多任务与 DAG 工作流 (`omp_run_batch_compact`)**：对于跨模块实现或并发工作流，使用 `omp_run_batch_compact` 组织依赖图。确保并发写任务声明互不重叠的 `ownership` 路径，并对修改相同文件的任务通过 `depends_on` 施加串行顺序。
 4. **人类与宿主把关**：不可逆或高影响操作（例如 `npm publish`、`git push`、生产部署、密钥凭据修改、破坏性删除）必须保留在宿主与人类用户的直接交互中由人类确认，绝不盲目委派给后台 Worker。
 5. **失败与回退**：若 `omp-worker-mcp` 不可用、配置错误或无法连通，应向用户明确报告错误，而不是尝试不受支持的操作。
@@ -96,8 +96,8 @@
 
 在策略文件配置生效后，日常开发中**无需**在提示词中显式提及 `omp-worker-mcp` 或具体工具名：
 
-- **自然语言请求**：直接描述您的目标（例如：“在运行器中实现指数退避重试，并确保单元测试通过”或“并行重构认证中间件与用户服务”）。宿主会自动根据策略判断并调用 `omp_run_compact` 或 `omp_run_batch_compact`。
-- **显式提及**：仅在初次验证链路，或宿主在处理复杂多步骤任务时意外回退到直接处理模式时，才需要显式要求使用 `omp-worker-mcp`。
+- **自然语言请求**：直接描述您的目标（例如：“在运行器中实现指数退避重试，并确保单元测试通过”或“并行重构认证中间件与用户服务”）。宿主会结合策略启发规则判断是否下发给 Worker。
+- **显式提及**：在初次验证链路、委派任务至关重要或宿主在处理复杂多步骤任务时未自动选用时，您可显式要求使用 `omp-worker-mcp`。
 
 ---
 
@@ -110,7 +110,7 @@
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │                          主要主控 Harness                              │
-│                  (Codex / Claude Code / WorkBuddy)                     │
+│            (Codex / Claude Code / Cursor / 其他宿主)                   │
 │                                                                        │
 │  1. 理解任务目标  ──▶  2. 拆分 / DAG 编排  ──▶  3. 设定验收标准         │
 │         ▲                                                 │            │
@@ -136,7 +136,7 @@
 
 1. **理解与定界（Understand & Contextualize）**：解析用户目标，执行轻量有界的只读调研，确认工作区前置依赖。
 2. **拆分与编排（Decompose & Schedule）**：评估任务复杂度，决定是直接处理、委派单一任务，还是构建拓扑 DAG 批处理任务组。
-3. **设验收与边界（Define Acceptance Criteria & Boundaries）**：显式设定可验证的验收标准（`acceptance`），设置访问模式（`read_only` 或 `write`），并为写入任务分配互不重叠的 `ownership` 路径。
+3. **设验收与边界（Define Acceptance Criteria & Boundaries）**：显式设定可验证的验收标准（`acceptance`），单任务直接在 `goal` 与 `acceptance` 中表达只读或写入意图，批量 DAG 任务则配置访问模式（`read_only` 或 `write`）并为写入任务分配互不重叠的 `ownership` 路径。
 4. **委派与监督（Delegate & Supervise）**：调用 `omp_run_compact`、`omp_delegate` 或 `omp_run_batch_compact` 启动后台执行，主会话保持持续响应。
 5. **验收与核对（Inspect & Verify）**：检查 Worker 返回的结构化结果信封（`OMP_WORKER_RESULT`），核对文件修改产物与测试验证证据后再决定是否进入下一步。
 6. **同会话纠错（In-Session Correction）**：若验收不达标或遇到阻碍，调用 `omp_continue` 注入针对性反馈（feedback）在同一会话中推进纠错，无需从头重跑。
@@ -146,17 +146,17 @@
 | 执行模式 | 适用场景 | 核心入口工具 | 安全与使用边界 |
 | :--- | :--- | :--- | :--- |
 | **直接处理**<br>*(Host-native)* | 单文件微调、即时问答、架构轻量讨论、需人类即时逐行决策的操作。 | 主控内置的 read/edit/终端工具 | 不启动后台 Worker，无额外进程与编排开销。 |
-| **单任务委托** | 独立的特性开发、定向 Bug 修复、单子系统重构、耗时技术只读调研。 | `omp_run_compact`<br>*(或 `omp_delegate` + `omp_wait`)* | 需具备清晰的 `goal` 与 `acceptance`。写入任务必须显式声明具体的 `ownership` 路径。 |
-| **批量 DAG 编排** | 跨模块系统重构、前后端并行开发、多源并行调研再汇总整合。 | `omp_run_batch_compact`<br>*(配合 `omp_wait_group`)* | 并行 `write` 任务之间必须拥有互斥的 `ownership` 路径。修改相同文件必须声明串行的 `depends_on` 依赖。受 `max_parallel` (1–10) 并发池约束。 |
+| **单任务委托** | 独立的特性开发、定向 Bug 修复、单子系统重构、耗时技术只读调研。 | `omp_run_compact`<br>*(或 `omp_delegate` + `omp_wait`)* | 需具备清晰的 `goal` 与 `acceptance`（只读意图直接在验收标准中说明；单任务无顶层 `access` 或 `ownership` 参数）。 |
+| **批量 DAG 编排** | 跨模块系统重构、前后端并行开发、多源并行调研再汇总整合。 | `omp_run_batch_compact`<br>*(配合 `omp_wait_group`)* | 并行 `write` 任务项之间必须拥有互斥的 `ownership` 路径。修改相同文件必须声明串行的 `depends_on` 依赖。受 `max_parallel` (1–10) 并发池约束。 |
 
 ---
 
 ## 5. 个人实测体验与环境配置
 
-在作者个人的本地开发环境中，`omp-worker-mcp` 配置了 **Gemini 3.7 Flash** 作为底层 Worker 模型，运行于 Antigravity 环境下。在此个人配置中（模型配额相对宽裕），该组合展现出快速、稳定且多步骤自治能力良好的主观体验。
+在作者个人的本地开发环境中，`omp-worker-mcp` 在使用时配置了作者选用的 Gemini Flash 模型配置，运行于 Antigravity 环境下。在此个人配置中（模型配额相对宽裕），该组合展现出快速、稳定且多步骤自治能力良好的主观体验。
 
 > **免责声明**：
-> 本节仅作为作者个人的实际工作流实践与可借鉴参考模式，**并非**本项目的必要使用前提、性能保证或通用最佳解法。模型响应速度、可用配额与任务生成质量会因个人账户、所在地区、模型版本及本地环境不同而存在显著差异。本项目未获得 Google Gemini 或 Antigravity 的任何官方背书。
+> 本节仅作为作者在使用时的个人工作流实践与定性参考模式，**并非**本项目的必要使用前提、性能保证或通用最佳解法。模型响应速度、可用配额与任务生成质量会因个人账户、所在地区、模型版本及本地环境不同而存在显著差异。本项目未获得 Google Gemini 或 Antigravity 的任何官方背书。
 
 ---
 

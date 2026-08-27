@@ -32,6 +32,7 @@ To maintain clear boundaries and eliminate redundant content, documentation resp
 | [**Client Configurations**](client-configurations.md) | MCP host harness connection and configuration guides. | • Local stdio compatibility prerequisites<br>• Evidence-based support tiers (Verified vs. Documented vs. Conditional)<br>• Generic `mcpServers` JSON template<br>• Client setups (Codex, Claude Code, Cursor, VS Code / Copilot, Windsurf, Continue)<br>• Official reference links and direct-use boundaries |
 | [**Operations & State Lifecycle**](operations.md) | Runtime configuration, persistence internals, and operational maintenance. | • Environment variable reference table<br>• On-disk state directory layout (`~/.codex/state/omp-worker`)<br>• Retention and cleanup policies (TTL & size bounds)<br>• Server restart, crash safety, and process decoupling |
 | [**Tool Reference & Safety Contract**](tool-reference.md) | Detailed specifications for all exposed MCP tools and security contracts. | • Single-task delegation tools (`omp_run_compact`, `omp_delegate`, etc.)<br>• Batch and DAG orchestration tools (`omp_run_batch_compact`, etc.)<br>• Path ownership isolation rules (`write` vs. `read_only`)<br>• Structured output envelope contract (`OMP_WORKER_RESULT`) |
+| [**Official MCP Registry Publishing Guide**](registry-publishing.md) | Maintainer release workflow for npm and the Official MCP Registry. | • Key metadata files (`package.json`, `server.json`)<br>• Release sequence (npm publish & MCP Publisher CLI)<br>• Version verification and publishing safety boundaries |
 
 ---
 
@@ -41,6 +42,7 @@ To maintain clear boundaries and eliminate redundant content, documentation resp
 - **Configuring your MCP client?** Head over to [Client Configurations](client-configurations.md) for verified configs and templates.
 - **Managing production or CI environments?** Check [Operations & State Lifecycle](operations.md) for retention settings and state layout.
 - **Developing agent prompts or custom integrations?** Consult the [Tool Reference & Safety Contract](tool-reference.md).
+- **Publishing or maintaining releases?** Review the [Official MCP Registry Publishing Guide](registry-publishing.md).
 
 ---
 

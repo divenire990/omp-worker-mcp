@@ -42,9 +42,8 @@
 To ensure predictable and collision-free agent execution, `omp-worker-mcp` enforces a three-part safety contract:
 
 ### 1. Write vs. Read-Only Boundaries
-- **`write` Tasks**: Must explicitly declare the workspace file paths or directories they intend to modify via the `ownership` parameter; declared boundaries are supplied as worker constraints.
-- **`read_only` Tasks**: Declare no write scope, and read-only constraints are supplied to the worker prompt (enforcement relies on worker constraints and review rather than OS-level sandboxing).
-
+- **Batch Task Items (`omp_run_batch_compact`)**: Task items in a batch DAG declare `access` (`write` vs. `read_only`). `write` task items must explicitly declare the workspace file paths or directories they intend to modify via the `ownership` parameter; declared boundaries are supplied as worker constraints. `read_only` task items declare no write scope, and read-only constraints are supplied to the worker prompt.
+- **Single Tasks (`omp_run_compact`)**: Single-task delegation tools do not accept `access` or `ownership` parameters. Read-only and no-modification intent must be expressed directly within the task's `goal` and `acceptance` criteria.
 ### 2. DAG Overlap & Collision Verification
 - **Disjoint Ownership**: The server validates batch groups and rejects concurrent tasks with overlapping write scopes.
 - **Sequential Dependencies**: Tasks that must touch shared files or directories must declare explicit linear dependencies via `depends_on`.

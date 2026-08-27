@@ -21,7 +21,7 @@ Publishing `omp-worker-mcp` as an official Model Context Protocol server require
 ### Key Metadata Files
 
 - **`package.json`**:
-  - `version`: `0.1.1`
+  - `version`: The semantic release version to be published (read or bump as appropriate).
   - `mcpName`: `io.github.divenire990/omp-worker-mcp` (Required for official registry namespace verification).
   - `files`: Includes `dist`, `bin`, `server.json`, `README.md`, `LICENSE`.
 - **`server.json`**:
@@ -64,7 +64,7 @@ Publish the package with public access:
 npm publish --access public
 ```
 
-> **Note**: Verify that version `0.1.1` is live and accessible on [npmjs.com/package/omp-worker-mcp](https://www.npmjs.com/package/omp-worker-mcp) before proceeding to registry publishing.
+> **Note**: Verify that the targeted release version in `package.json` is live and accessible on [npmjs.com/package/omp-worker-mcp](https://www.npmjs.com/package/omp-worker-mcp) before proceeding to registry publishing.
 
 ### Step 3: Authenticate with MCP Publisher CLI
 

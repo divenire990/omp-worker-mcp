@@ -55,7 +55,12 @@ omp --version
 
 *Troubleshooting: If `omp` is not on your `PATH`, set `OMP_WORKER_OMP_COMMAND` to its executable path in your MCP configuration.*
 
-### 3. Add MCP Configuration & Restart Host
+### 3. Configure OMP & Default Worker Model
+Run `omp setup` in your terminal to authenticate, configure your local OMP environment, and select your default worker model. This default model is what background OMP workers use during task execution.
+
+*(Optional advanced configuration)*: You can specify your default model via `modelRoles.default: <provider>/<model>` in `~/.omp/agent/config.yml`. For upstream configuration options, see [Oh My Pi](https://github.com/can1357/oh-my-pi).
+
+### 4. Add MCP Configuration & Restart Host
 Add `omp-worker-mcp` to your host harness's stdio `mcpServers` configuration (`npx` recommended) and restart the host harness:
 
 ```json
@@ -74,13 +79,12 @@ Add `omp-worker-mcp` to your host harness's stdio `mcpServers` configuration (`n
 
 *For detailed client configurations covering Codex (`config.toml`), Claude Code, Cursor, VS Code / GitHub Copilot, Windsurf Cascade, and Continue, see [Client Configurations](docs/client-configurations.md).*
 
-### 4. Send Your First Prompt
+### 5. Send Your First Prompt
 After restarting your host harness, paste a read-only inspection prompt directly into your conversation to verify the full delegation chain:
 
 ```text
 Please use the configured omp-worker-mcp to perform a read-only inspection of the current workspace, review the project structure and dependencies, and provide a concise summary report. Do not modify any files.
 ```
-
 ---
 
 ### Developer Alternative: Building from Source
@@ -95,7 +99,7 @@ npm test
 
 ## Recommended Entrypoints
 
-A capable host harness automatically selects the appropriate high-level execution entrypoint based on task complexity (users do not need to invoke these internal tools manually):
+While MCP registration and policy heuristics guide host harnesses to select high-level entrypoints based on task complexity, automatic invocation is not guaranteed. Users may also explicitly request omp-worker-mcp in prompts when delegation is critical or if the host falls back to direct execution:
 
 - **`omp_run_compact` (Single Task)**: High-level single-task entrypoint selected by the host to delegate a discrete coding or research assignment, wait up to `wait_seconds` for execution, and return a compact structured summary and artifact list.
 - **`omp_run_batch_compact` (Multi-Task / DAG)**: High-level multi-task entrypoint selected by the host to dispatch interdependent tasks with explicit dependency graphs and concurrency limits, waiting for aggregated results.
@@ -106,7 +110,7 @@ A capable host harness automatically selects the appropriate high-level executio
 
 ## Task Safety & Ownership
 
-1. **Declared Write Ownership**: `write` tasks must explicitly declare the workspace paths they own via `ownership`, while `read_only` tasks declare no write scope. The server supplies declared boundaries as constraints to the worker.
+1. **Declared Write Ownership in Batch DAGs**: In batch DAG tasks (`omp_run_batch_compact`), `write` task items must explicitly declare the workspace paths they own via `ownership`, while `read_only` task items declare no write scope. For single-task execution (`omp_run_compact`), read-only and no-modification constraints are expressed directly in `goal` and `acceptance`.
 2. **DAG Overlap Validation**: The server validates batch groups and rejects concurrent tasks with overlapping write scopes; tasks operating on shared paths must declare sequential `depends_on` dependencies.
 3. **Structured Verification Contract**: Subagents deliver results using the structured `OMP_WORKER_RESULT` envelope (status, summary, artifacts, verification checks, remaining items).
 
@@ -123,7 +127,7 @@ A capable host harness automatically selects the appropriate high-level executio
   - **Linux**: Supported by the architecture, but awaiting broader production verification.
 - **Support Tiers**:
   - **Author-Verified**: Codex (author's daily local workflow; not a cross-platform CI guarantee).
-  - **Documented / Reproducible**: Claude Code, WorkBuddy, Claude Desktop, Cursor, Cline, VS Code, GitHub Copilot CLI (*not CI integration-tested*).
+  - **Documented / Reproducible**: Claude Code, Cursor, VS Code / GitHub Copilot, Windsurf Cascade, Continue (*not CI integration-tested*).
   - **Cloud / Remote Hosts**: Conditional (*requires complete runtime, OMP CLI in PATH, writable workspace, and process spawning permissions*).
 
 ---
@@ -138,6 +142,7 @@ Detailed documentation is organized in the [`docs/`](docs/README.md) directory:
 - [**Operations & State Lifecycle**](docs/operations.md): Environment variables, state directory layout, retention policies, and recovery.
 - [**Tool Reference & Safety Contract**](docs/tool-reference.md): Full MCP tool specifications and safety boundaries.
 - [**Benchmark Protocol**](benchmarks/README.md): Reproducible evaluation protocol comparing direct host execution against supervisor-worker delegation.
+- [**Official MCP Registry Publishing Guide**](docs/registry-publishing.md): Step-by-step maintainer release workflow for npm and the Official MCP Registry.
 
 ---
 

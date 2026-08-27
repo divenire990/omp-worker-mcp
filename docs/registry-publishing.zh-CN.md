@@ -21,7 +21,7 @@
 ### 核心元数据文件
 
 - **`package.json`**：
-  - `version`：`0.1.1`
+  - `version`：待发布的语义化版本号（请核验或升级 `package.json` 中的版本）。
   - `mcpName`：`io.github.divenire990/omp-worker-mcp`（官方注册中心反向 DNS 命名空间校验字段）。
   - `files`：包含 `dist`、`bin`、`server.json`、`README.md`、`LICENSE`。
 - **`server.json`**：
@@ -64,7 +64,7 @@ npm pack --dry-run
 npm publish --access public
 ```
 
-> **注意**：在继续发布到 MCP Registry 前，请在 [npmjs.com/package/omp-worker-mcp](https://www.npmjs.com/package/omp-worker-mcp) 确认 `0.1.1` 版本已成功上线且元数据生效。
+> **注意**：在继续发布到 MCP Registry 前，请在 [npmjs.com/package/omp-worker-mcp](https://www.npmjs.com/package/omp-worker-mcp) 确认 `package.json` 中声明的待发布版本已成功上线且元数据生效。
 
 ### 第 3 步：通过 MCP Publisher CLI 登录认证
 

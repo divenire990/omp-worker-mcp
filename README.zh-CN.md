@@ -55,7 +55,12 @@ omp --version
 
 *排错提示：如果 `omp` 不在系统 `PATH` 中，请在 MCP 配置中将 `OMP_WORKER_OMP_COMMAND` 环境变量设置为其可执行文件的绝对路径。*
 
-### 3. 配置宿主并重启
+### 3. 配置 OMP 与默认 Worker 模型
+在终端中运行 `omp setup` 完成本地 OMP 环境的认证与配置，并选择您的默认 Worker 模型。该默认模型即为 OMP 后台 Worker 执行任务时所使用的模型。
+
+*（可选高级配置）*：您也可以在 `~/.omp/agent/config.yml` 中通过 `modelRoles.default: <provider>/<model>` 直接指定默认模型。有关上游配置项详情，请参阅 [Oh My Pi](https://github.com/can1357/oh-my-pi)。
+
+### 4. 配置宿主并重启
 在主控 Harness 的 stdio `mcpServers` 配置中添加 `omp-worker-mcp`（推荐使用 `npx`），然后重启宿主 Harness：
 
 ```json
@@ -74,13 +79,12 @@ omp --version
 
 *关于 Codex (`config.toml`)、Claude Code、Cursor、VS Code / GitHub Copilot、Windsurf Cascade 及 Continue 的完整配置，请参阅 [客户端接入与配置指南](docs/client-configurations.zh-CN.md)。*
 
-### 4. 发送第一条提示词
+### 5. 发送第一条提示词
 重启宿主 Harness 后，在对话中直接发送一条只读检查提示词，验证端到端委托链路：
 
 ```text
 请使用配置好的 omp-worker-mcp 对当前工作区进行一次只读检查，梳理目录结构与依赖配置，并给出一份简要概览报告。请不要修改任何文件。
 ```
-
 ---
 
 ### 开发者替代方式：从源码编译
@@ -95,7 +99,7 @@ npm test
 
 ## 推荐接入入口
 
-具备 MCP 工具调用能力的宿主 Harness 会根据任务复杂度自动选择合适的执行路径（无需用户手动选择或调用内部工具）：
+尽管 MCP 注册与策略启发规则能够引导具备工具调用能力的宿主 Harness 根据任务复杂度选择高层入口，但无法保证所有交互中均会自动调用。当任务委派至关重要或宿主未自动选用时，用户亦可在提示词中显式指定使用 omp-worker-mcp：
 
 - **`omp_run_compact`（单任务推荐）**：由宿主选择的高层单任务入口，委托单个编码或调研任务并在 `wait_seconds` 内等待执行完成，返回压缩摘要与产物列表。
 - **`omp_run_batch_compact`（多任务与 DAG 推荐）**：由宿主选择的高层多任务与工作流入口，创建并调度具有依赖关系的有向无环图批量任务，控制并发度并等待全部完成返回汇总结果。
@@ -106,7 +110,7 @@ npm test
 
 ## 任务安全与所有权约束
 
-1. **声明式写入所有权**：`write` 任务必须通过 `ownership` 明确声明写入文件路径，`read_only` 任务不声明写入范围；服务端将所声明的边界作为约束提供给 Worker。
+1. **批量 DAG 声明式写入所有权**：在批量 DAG 任务（`omp_run_batch_compact`）中，`write` 任务项必须通过 `ownership` 明确声明写入文件路径，`read_only` 任务项不声明写入范围。对于单任务委托（`omp_run_compact`），只读与不修改任何文件的约束直接在 `goal` 与 `acceptance` 中表述。
 2. **DAG 冲突与重叠校验**：服务端在批量任务组中校验并拒绝并发重叠的写入范围；操作相同路径的任务必须通过 `depends_on` 声明串行先后关系。
 3. **结构化校验信封约定**：所有子任务均需在最终输出中遵循 `OMP_WORKER_RESULT` 格式返回结构化结果（状态、总结、产物列表、测试验证、遗留项）。
 
@@ -123,7 +127,7 @@ npm test
   - **Linux**：架构已支持，仍待更广泛的生产环境验证。
 - **支持等级**：
   - **作者实测**：Codex（作者个人主力本机工作流实测；不构成跨平台 CI 集成保证）。
-  - **官方文档或可复制配置**：Claude Code、WorkBuddy、Claude Desktop、Cursor、Cline、VS Code、GitHub Copilot CLI（*未在 CI 做集成测试*）。
+  - **官方文档或可复制配置**：Claude Code、Cursor、VS Code / GitHub Copilot、Windsurf Cascade、Continue（*未在 CI 做集成测试*）。
   - **云端 / 远程宿主**：有条件支持（*需远程容器完整提供 Node.js >= 22、处于 PATH 的 OMP CLI、可写工作区及进程启动权限*）。
 
 ---
@@ -138,6 +142,7 @@ npm test
 - [**运维配置与状态生命周期**](docs/operations.zh-CN.md)：环境变量完整表、磁盘状态布局、保留清理策略与重启恢复。
 - [**工具参考与安全约束**](docs/tool-reference.zh-CN.md)：全部 MCP 工具定义、参数规范与安全边界。
 - [**基准测试评估规范**](benchmarks/README.zh-CN.md)：对比主控直接执行与主控-Worker 委派编排的可复现评测协议。
+- [**官方 MCP Registry 发布指南**](docs/registry-publishing.zh-CN.md)：针对维护者的 npm 与官方 MCP Registry 发布流程。
 
 ---
 
