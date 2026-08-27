@@ -60,9 +60,8 @@ Run `omp setup` in your terminal to authenticate, configure your local OMP envir
 
 *(Optional advanced configuration)*: You can specify your default model via `modelRoles.default: <provider>/<model>` in `~/.omp/agent/config.yml`. For upstream configuration options, see [Oh My Pi](https://github.com/can1357/oh-my-pi).
 
-### 4. Add MCP Configuration & Restart Host
-Add `omp-worker-mcp` to your host harness's stdio `mcpServers` configuration (`npx` recommended) and restart the host harness:
-
+### 4. Install / Register omp-worker-mcp from npm via npx & Restart Host
+Add `omp-worker-mcp` to your host harness's stdio `mcpServers` configuration. The host runs the published npm package using `npx -y omp-worker-mcp`, which downloads and caches it on first use; ordinary users do not need `git clone` or `npm install -g`. Keep the JSON configuration below as the executable setup and restart your host harness:
 ```json
 {
   "mcpServers": {
@@ -87,7 +86,7 @@ Please use the configured omp-worker-mcp to perform a read-only inspection of th
 ```
 ---
 
-### Developer Alternative: Building from Source
+### For Contributors / Local Development: Building from Source
 
 ```bash
 git clone https://github.com/divenire990/omp-worker-mcp.git

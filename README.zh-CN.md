@@ -60,9 +60,8 @@ omp --version
 
 *（可选高级配置）*：您也可以在 `~/.omp/agent/config.yml` 中通过 `modelRoles.default: <provider>/<model>` 直接指定默认模型。有关上游配置项详情，请参阅 [Oh My Pi](https://github.com/can1357/oh-my-pi)。
 
-### 4. 配置宿主并重启
-在主控 Harness 的 stdio `mcpServers` 配置中添加 `omp-worker-mcp`（推荐使用 `npx`），然后重启宿主 Harness：
-
+### 4. 通过 npx 从 npm 注册 / 安装 omp-worker-mcp 并重启宿主
+在主控 Harness 的 stdio `mcpServers` 配置中添加 `omp-worker-mcp`。宿主会通过 `npx -y omp-worker-mcp` 运行已发布的 npm 包，并在首次使用时自动下载与缓存；普通用户无需执行 `git clone` 或 `npm install -g`。保留以下 JSON 配置作为可执行配置，并重启宿主 Harness：
 ```json
 {
   "mcpServers": {
@@ -87,7 +86,7 @@ omp --version
 ```
 ---
 
-### 开发者替代方式：从源码编译
+### 贡献者与本地开发：从源码编译
 
 ```bash
 git clone https://github.com/divenire990/omp-worker-mcp.git
