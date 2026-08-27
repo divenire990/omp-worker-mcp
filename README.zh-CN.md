@@ -72,13 +72,13 @@ omp --version
 }
 ```
 
-*关于 Codex (`config.toml`)、Claude Code CLI、WorkBuddy、Cursor、VS Code 及其他客户端的完整配置，请参阅 [客户端接入与配置指南](docs/client-configurations.zh-CN.md)。*
+*关于 Codex (`config.toml`)、Claude Code、Cursor、VS Code / GitHub Copilot、Windsurf Cascade 及 Continue 的完整配置，请参阅 [客户端接入与配置指南](docs/client-configurations.zh-CN.md)。*
 
 ### 4. 发送第一条提示词
 重启宿主 Harness 后，在对话中直接发送一条只读检查提示词，验证端到端委托链路：
 
 ```text
-请对当前工作区进行一次只读检查，梳理目录结构与依赖配置，并给出一份简要概览报告。请不要修改任何文件。
+请使用配置好的 omp-worker-mcp 对当前工作区进行一次只读检查，梳理目录结构与依赖配置，并给出一份简要概览报告。请不要修改任何文件。
 ```
 
 ---
@@ -133,8 +133,8 @@ npm test
 更深入的技术指南与运维参考已系统整理至 [`docs/`](docs/README.zh-CN.md) 目录：
 
 - [**文档中心首页**](docs/README.zh-CN.md)：文档结构布局与职责划分说明。
-- [**作者工作流与架构设计**](docs/author-workflow.zh-CN.md)：主控与 Worker 监督闭环、执行策略矩阵与工作流撰写准则。
-- [**客户端接入与配置指南**](docs/client-configurations.zh-CN.md)：涵盖 Codex（作者实测）及 Claude Code、WorkBuddy、Cursor、VS Code 等客户端的配置指南与可复现示例。
+- [**作者工作流启用教程与架构参考**](docs/author-workflow.zh-CN.md)：工作流启用教程、策略模板、主控与 Worker 监督闭环与工作流撰写准则。
+- [**客户端接入与配置指南**](docs/client-configurations.zh-CN.md)：涵盖 Codex（作者实测）及 Claude Code、Cursor、VS Code / GitHub Copilot、Windsurf Cascade、Continue 等客户端的配置指南与可复现示例。
 - [**运维配置与状态生命周期**](docs/operations.zh-CN.md)：环境变量完整表、磁盘状态布局、保留清理策略与重启恢复。
 - [**工具参考与安全约束**](docs/tool-reference.zh-CN.md)：全部 MCP 工具定义、参数规范与安全边界。
 - [**基准测试评估规范**](benchmarks/README.zh-CN.md)：对比主控直接执行与主控-Worker 委派编排的可复现评测协议。

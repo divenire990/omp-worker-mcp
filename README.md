@@ -23,7 +23,7 @@
   <em>Asynchronous task execution, DAG dependency resolution, path ownership isolation, and structured result verification.</em>
 </p>
 
-[Quick Start](#installation--quick-start) • [Entrypoints](#recommended-entrypoints) • [Safety Contract](#task-safety--ownership) • [Platform Support](#platform-support--boundaries) • [Docs Hub](docs/README.md)
+[Quick Start](#installation-quick-start) • [Entrypoints](#recommended-entrypoints) • [Safety Contract](#task-safety-ownership) • [Platform Support](#platform-support-boundaries) • [Docs Hub](docs/README.md)
 
 </div>
 
@@ -72,13 +72,13 @@ Add `omp-worker-mcp` to your host harness's stdio `mcpServers` configuration (`n
 }
 ```
 
-*For detailed client configurations covering Codex (`config.toml`), Claude Code CLI, WorkBuddy, Cursor, VS Code, and more, see [Client Configurations](docs/client-configurations.md).*
+*For detailed client configurations covering Codex (`config.toml`), Claude Code, Cursor, VS Code / GitHub Copilot, Windsurf Cascade, and Continue, see [Client Configurations](docs/client-configurations.md).*
 
 ### 4. Send Your First Prompt
 After restarting your host harness, paste a read-only inspection prompt directly into your conversation to verify the full delegation chain:
 
 ```text
-Please perform a read-only inspection of the current workspace, review the project structure and dependencies, and provide a concise summary report. Do not modify any files.
+Please use the configured omp-worker-mcp to perform a read-only inspection of the current workspace, review the project structure and dependencies, and provide a concise summary report. Do not modify any files.
 ```
 
 ---
@@ -133,8 +133,8 @@ A capable host harness automatically selects the appropriate high-level executio
 Detailed documentation is organized in the [`docs/`](docs/README.md) directory:
 
 - [**Documentation Index**](docs/README.md): Overview of documentation layout and responsibilities.
-- [**Author Workflow & Architecture**](docs/author-workflow.md): Host-Worker supervision loop, execution strategies, and authoring guidelines.
-- [**Client Configurations**](docs/client-configurations.md): Documented and reproducible configuration guidance for Codex, Claude Code, WorkBuddy, Cursor, VS Code, and more.
+- [**Author Workflow Enablement & Architecture**](docs/author-workflow.md): Enablement tutorial, policy templates, host-worker supervision loop, and authoring guidelines.
+- [**Client Configurations**](docs/client-configurations.md): Documented and reproducible configuration guidance for Codex, Claude Code, Cursor, VS Code / GitHub Copilot, Windsurf Cascade, and Continue.
 - [**Operations & State Lifecycle**](docs/operations.md): Environment variables, state directory layout, retention policies, and recovery.
 - [**Tool Reference & Safety Contract**](docs/tool-reference.md): Full MCP tool specifications and safety boundaries.
 - [**Benchmark Protocol**](benchmarks/README.md): Reproducible evaluation protocol comparing direct host execution against supervisor-worker delegation.

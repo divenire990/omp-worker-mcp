@@ -28,8 +28,8 @@ To maintain clear boundaries and eliminate redundant content, documentation resp
 
 | Document | Primary Scope & Responsibilities | Key Topics Covered |
 | :--- | :--- | :--- |
-| [**Author Workflow & Architecture**](author-workflow.md) | Architectural models, orchestration flows, and authoring guidelines. | • Host-Worker supervision loop (6-step lifecycle)<br>• Execution strategy matrix (Direct vs. Single vs. Batch DAG)<br>• Natural language delegation examples<br>• Author's personal Gemini/Antigravity setup (non-guaranteed reference)<br>• Safety guardrails for documenting workflows |
-| [**Client Configurations**](client-configurations.md) | MCP host harness connection and configuration guides. | • Local stdio compatibility prerequisites<br>• Evidence-based support tiers (Verified vs. Documented vs. Conditional)<br>• Generic `mcpServers` JSON template<br>• Client setups (Codex, Claude Code, WorkBuddy, Claude Desktop)<br>• Official reference links (Cursor, VS Code, Copilot CLI, Cline) |
+| [**Author Workflow Enablement & Architecture**](author-workflow.md) | Enablement tutorial, policy templates, and architecture reference. | • Tool availability, direct namespace access, and selection policy<br>• Codex-specific `direct_only_tool_namespaces` setup<br>• Reusable project-level policy templates (`AGENTS.md` / `CLAUDE.md`)<br>• Verification prompt and observable behavior<br>• Host-Worker supervision loop (6-step lifecycle)<br>• Execution strategy matrix (Direct vs. Single vs. Batch DAG)<br>• Author's personal Gemini/Antigravity setup (non-guaranteed reference)<br>• Safety guardrails for documenting workflows |
+| [**Client Configurations**](client-configurations.md) | MCP host harness connection and configuration guides. | • Local stdio compatibility prerequisites<br>• Evidence-based support tiers (Verified vs. Documented vs. Conditional)<br>• Generic `mcpServers` JSON template<br>• Client setups (Codex, Claude Code, Cursor, VS Code / Copilot, Windsurf, Continue)<br>• Official reference links and direct-use boundaries |
 | [**Operations & State Lifecycle**](operations.md) | Runtime configuration, persistence internals, and operational maintenance. | • Environment variable reference table<br>• On-disk state directory layout (`~/.codex/state/omp-worker`)<br>• Retention and cleanup policies (TTL & size bounds)<br>• Server restart, crash safety, and process decoupling |
 | [**Tool Reference & Safety Contract**](tool-reference.md) | Detailed specifications for all exposed MCP tools and security contracts. | • Single-task delegation tools (`omp_run_compact`, `omp_delegate`, etc.)<br>• Batch and DAG orchestration tools (`omp_run_batch_compact`, etc.)<br>• Path ownership isolation rules (`write` vs. `read_only`)<br>• Structured output envelope contract (`OMP_WORKER_RESULT`) |
 
@@ -37,7 +37,7 @@ To maintain clear boundaries and eliminate redundant content, documentation resp
 
 ## Quick Navigation
 
-- **New to Agent Delegation?** Start with [Author Workflow & Architecture](author-workflow.md) to understand the Host-Worker paradigm.
+- **New to Agent Delegation?** Start with [Author Workflow Enablement & Architecture](author-workflow.md) to enable project policies and understand the Host-Worker paradigm.
 - **Configuring your MCP client?** Head over to [Client Configurations](client-configurations.md) for verified configs and templates.
 - **Managing production or CI environments?** Check [Operations & State Lifecycle](operations.md) for retention settings and state layout.
 - **Developing agent prompts or custom integrations?** Consult the [Tool Reference & Safety Contract](tool-reference.md).
