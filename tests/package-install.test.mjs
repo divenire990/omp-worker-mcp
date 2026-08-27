@@ -97,7 +97,7 @@ test("package.json metadata satisfies publishing and Node >=22 constraints", asy
   assert.equal(pkg.license, "MIT");
   assert.ok(pkg.repository && pkg.repository.url, "repository url should be defined");
   assert.ok(!pkg.repository.url.includes("undefined"), "repository url should be valid");
-  assert.equal(pkg.bin["omp-worker-mcp"], "./bin/omp-worker-mcp.mjs");
+  assert.equal(pkg.bin["omp-worker-mcp"], "bin/omp-worker-mcp.mjs");
   assert.equal(pkg.exports["."], "./dist/index.js");
   assert.equal(pkg.engines?.node, ">=22");
   assert.ok(Array.isArray(pkg.files), "files should be an array");
