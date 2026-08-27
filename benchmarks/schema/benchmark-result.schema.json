@@ -1,0 +1,168 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OmpWorkerBenchmarkResult",
+  "description": "Schema for recording reproducible OMP Worker benchmark execution runs across Direct and Supervisor-Worker modes.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "case_id",
+    "task_id",
+    "mode",
+    "operator_metadata",
+    "wall_clock_seconds",
+    "acceptance_result",
+    "retry_count",
+    "token_telemetry",
+    "cost_telemetry",
+    "notes"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional URI or local path reference to this JSON schema."
+    },
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    },
+    "case_id": {
+      "type": "string",
+      "enum": [
+        "case-01-read-only-investigation",
+        "case-02-single-module-bugfix",
+        "case-03-disjoint-write-dag"
+      ]
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Unique run or trial identifier assigned by the operator."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["direct", "supervisor_worker"],
+      "description": "Execution architecture mode."
+    },
+    "operator_metadata": {
+      "type": "object",
+      "required": [
+        "model_identifier",
+        "client_identifier",
+        "client_version",
+        "omp_worker_version"
+      ],
+      "properties": {
+        "model_identifier": {
+          "type": "string",
+          "description": "Identifier of primary host model and/or worker model (e.g., 'claude-3-7-sonnet', 'gemini-3.7-flash')."
+        },
+        "client_identifier": {
+          "type": "string",
+          "description": "Name of host client or harness (e.g., 'codex', 'claude-code', 'cursor', 'workbuddy')."
+        },
+        "client_version": {
+          "type": "string",
+          "description": "Exact version, build, or release identifier of the host client/harness."
+        },
+        "omp_worker_version": {
+          "type": "string",
+          "description": "Version identifier of omp-worker-mcp."
+        },
+        "environment_os": {
+          "type": "string",
+          "description": "Operating system and architecture (e.g., 'win32-x64', 'darwin-arm64', 'linux-x64')."
+        }
+      },
+      "additionalProperties": false
+    },
+    "wall_clock_seconds": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Elapsed time from prompt submission / delegation to final outcome in seconds."
+    },
+    "primary_harness_tool_calls": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Number of tool calls directly invoked by the primary host harness during the task. Set to null if unobservable."
+    },
+    "acceptance_result": {
+      "type": "string",
+      "enum": ["passed", "failed", "partial"],
+      "description": "Independent evaluation of whether the deliverables satisfied the acceptance criteria."
+    },
+    "retry_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of corrective iterations or omp_continue cycles executed to achieve the result."
+    },
+    "token_telemetry": {
+      "type": "object",
+      "required": [
+        "available",
+        "telemetry_source",
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "disclosure"
+      ],
+      "properties": {
+        "available": {
+          "type": "boolean",
+          "description": "Flag indicating whether reliable token consumption telemetry was observed from the client/host."
+        },
+        "telemetry_source": {
+          "type": ["string", "null"],
+          "description": "Name or description of the client-provided usage view, session export, or telemetry surface (e.g., 'codex_session_jsonl', 'codex-cli-session-export', 'account-usage-dashboard'). Required when token telemetry is available; null when unobservable."
+        },
+        "input_tokens": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Directly observed prompt/input tokens, or null if telemetry is unavailable."
+        },
+        "output_tokens": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Directly observed completion/output tokens, or null if telemetry is unavailable."
+        },
+        "total_tokens": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Directly observed total tokens, or null if telemetry is unavailable."
+        },
+        "disclosure": {
+          "type": "string",
+          "description": "Mandatory statement explaining how token telemetry was captured or the reason for unobservability."
+        }
+      },
+      "additionalProperties": false
+    },
+    "cost_telemetry": {
+      "type": "object",
+      "required": [
+        "available",
+        "total_cost_usd",
+        "disclosure"
+      ],
+      "properties": {
+        "available": {
+          "type": "boolean",
+          "description": "Flag indicating whether exact per-session monetary cost was directly provided by the host client/platform."
+        },
+        "total_cost_usd": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Directly observed cost in USD, or null if unexposed or operating under subscription/quota tiers. Must not be estimated or inferred from token counts or plan fees."
+        },
+        "disclosure": {
+          "type": "string",
+          "description": "Mandatory statement explaining cost telemetry availability or reasons for unobservability (e.g., subscription tier without per-session dollar breakdown)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "notes": {
+      "type": "string",
+      "description": "Qualitative observations regarding context retention, tool overhead, failure recovery, or workflow smoothness."
+    }
+  },
+  "additionalProperties": false
+}

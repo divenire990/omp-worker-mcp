@@ -1,0 +1,10 @@
+{"type":"session_start","timestamp":"2026-08-27T10:00:00.000Z"}
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":1000,"cached_input_tokens":600,"output_tokens":150,"reasoning_output_tokens":40,"total_tokens":1150,"cache_write":100}},"rate_limits":{"primary":{"used_percent":8.5}}}}
+{"type":"response_item","payload":{"type":"function_call","name":"omp_run_compact","arguments":{"goal":"inspect data"}}}
+{"type":"response_item","payload":{"type":"function_call_output","output":"Task completed with status: completed. Artifacts: none."}}
+{"type":"response_item","payload":{"type":"function_call","name":"mcp__fs__read_file","arguments":{"path":"package.json"}}}
+{"type":"response_item","payload":{"type":"function_call_output","output":"{\"name\": \"data-pipeline\", \"version\": \"1.0.0\"}"}}
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":2500,"cached_input_tokens":1400,"output_tokens":450,"reasoning_output_tokens":120,"total_tokens":2950,"cache_write":300}},"rate_limits":{"primary":{"used_percent":14.25}}}}
+{"type":"response_item","payload":{"type":"function_call","name":"mcp__fs__write_file","arguments":{"path":"dist/bundle.js"}}}
+{"type":"response_item","payload":{"type":"function_call_output","output":"File written successfully (450 bytes)."}}
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":4000,"cached_input_tokens":2200,"output_tokens":800,"reasoning_output_tokens":200,"total_tokens":4800,"cache_write":500}},"rate_limits":{"primary":{"used_percent":22.0}}}}

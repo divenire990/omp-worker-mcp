@@ -1,0 +1,22 @@
+{
+  "name": "benchmark-data-pipeline",
+  "version": "1.0.0",
+  "description": "Self-contained, zero-dependency Node.js benchmark fixture for A/B testing",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test test/unit/*.test.js test/integration/*.test.js",
+    "test:unit": "node --test test/unit/*.test.js",
+    "test:integration": "node --test test/integration/*.test.js",
+    "test:case-01": "node --test test/unit/storage.test.js",
+    "test:case-02": "node --test test/unit/transformer.test.js",
+    "test:case-03": "node --test test/integration/pipeline.test.js"
+  },
+  "keywords": [
+    "benchmark",
+    "fixture",
+    "zero-dependency"
+  ],
+  "author": "",
+  "license": "MIT"
+}

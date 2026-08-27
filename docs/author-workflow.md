@@ -46,6 +46,14 @@
 > **Support Boundary Notice**:
 > Mentioning specific MCP clients illustrates compatible local stdio configurations. Configuration format and execution behavior must be verified by the user in their local environment; mentioning a client does **not** imply formal certification, continuous integration guarantees, or official endorsement by the upstream product.
 
+
+### Why This Architecture: An Empirical Hypothesis
+
+Rather than treating the primary host LLM as a monolithic tool executor, this architecture separates **strategic oversight** from **tactical execution**:
+- **Primary Host Harness** (e.g., Codex, Claude Code, Cursor): Focuses on problem formulation, system design, dependency decomposition, and adversarial acceptance verification.
+- **OMP Worker Subagents**: Autonomously perform multi-step edits, local searches, and test executions within isolated file ownership boundaries.
+
+> **Note on Benefits**: Benefits such as reduced context degradation, lower conversational turn fatigue, and higher multi-task throughput are treated as **testable hypotheses** to be evaluated empirically under real workloads. See the [Benchmark Protocol](../benchmarks/README.md) for standardized test cases and measurement rules.
 ---
 
 ## 2. Host Harness Supervision Flow

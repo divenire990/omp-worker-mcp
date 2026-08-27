@@ -25,7 +25,7 @@
   <em>Asynchronous task execution, DAG dependency resolution, path ownership isolation, and structured result verification.</em>
 </p>
 
-[Quick Start](#installation--quick-start) • [Minimal Config](#minimal-mcp-configuration) • [Tool Overview](#available-mcp-tools) • [Safety Contract](#task-safety--ownership) • [Platform Support](#platform-support--boundaries) • [Docs Hub](docs/README.md)
+[Quick Start](#installation--quick-start) • [Minimal Config](#minimal-mcp-configuration) • [Tool Overview](#available-mcp-tools) • [Safety Contract](#task-safety--ownership) • [Benchmark Protocol](benchmarks/README.md) • [Platform Support](#platform-support--boundaries) • [Docs Hub](docs/README.md)
 
 </div>
 
@@ -39,6 +39,14 @@
 - 🔍 **Supervised Resumption & Envelopes**: Inspect interim execution logs in real time, extract structured result envelopes (`OMP_WORKER_RESULT`), and inject supervisory feedback via `omp_continue`.
 - 💾 **Persistent State & Configurable Retention**: File-backed state persistence for job metadata and logs with optional TTL and storage capacity bounds.
 
+
+---
+
+## Why This Architecture?
+
+`omp-worker-mcp` adopts a supervisor-worker delegation model: a premium host LLM (such as Codex or Claude Code) focuses on architecture, task decomposition, and acceptance review, while autonomous `omp-worker-mcp` background workers handle concrete execution.
+
+> **Empirical Hypothesis**: Delegating execution-heavy coding tasks to background workers frees the primary host harness to focus on high-level design and verification, reducing conversational context fatigue while enabling multi-task parallelism. Evaluate this hypothesis empirically using our reproducible [Benchmark Protocol](benchmarks/README.md).
 ---
 
 ## Platform Support & Boundaries
@@ -150,6 +158,7 @@ Detailed documentation is organized in the [`docs/`](docs/README.md) directory:
 - [**Client Configurations**](docs/client-configurations.md): Documented and reproducible configuration guidance for Codex, Claude Code, WorkBuddy, Cursor, VS Code, and more.
 - [**Operations & State Lifecycle**](docs/operations.md): Environment variables, state directory layout, retention policies, and recovery.
 - [**Tool Reference & Safety Contract**](docs/tool-reference.md): Full MCP tool specifications and safety boundaries.
+- [**Benchmark Protocol**](benchmarks/README.md): Reproducible evaluation protocol comparing direct host execution against supervisor-worker delegation.
 
 ---
 

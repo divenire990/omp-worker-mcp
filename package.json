@@ -1,6 +1,7 @@
 {
   "name": "omp-worker-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "mcpName": "io.github.divenire990/omp-worker-mcp",
   "type": "module",
   "description": "Delegate complete coding tasks to the local OMP default model and inspect the result.",
   "license": "MIT",
@@ -34,6 +35,7 @@
   "files": [
     "dist",
     "bin",
+    "server.json",
     "README.md",
     "LICENSE"
   ],
@@ -41,6 +43,7 @@
     "build": "tsc -p tsconfig.json",
     "prepack": "npm run build",
     "test": "npm run build && node --test tests/*.test.mjs",
+    "benchmark:extract-telemetry": "node benchmarks/tools/extract-codex-telemetry.mjs",
     "start": "node dist/index.js"
   },
   "dependencies": {

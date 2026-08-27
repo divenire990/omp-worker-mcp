@@ -12,6 +12,10 @@ yarn-error.log*
 test-results/
 coverage/
 
+
+# Benchmark local trial results (prevent committing unverified personal telemetry)
+benchmarks/results/*.json
+!benchmarks/results/template.json
 # Environment files
 .env
 .env.local

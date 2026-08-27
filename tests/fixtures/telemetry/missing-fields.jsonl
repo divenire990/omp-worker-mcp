@@ -1,0 +1,4 @@
+{"type":"session_start","timestamp":"2026-08-27T10:00:00.000Z"}
+{"type":"message","content":"Hello world"}
+{"type":"response_item","payload":{"type":"function_call","name":"tool_without_output"}}
+{"type":"session_end"}

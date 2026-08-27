@@ -1,0 +1,32 @@
+{
+  "$schema": "./benchmark-result.schema.json",
+  "schema_version": "1.0.0",
+  "case_id": "case-01-read-only-investigation",
+  "task_id": "run-template-001",
+  "mode": "supervisor_worker",
+  "operator_metadata": {
+    "model_identifier": "claude-3-7-sonnet (host) / gemini-3.7-flash (worker)",
+    "client_identifier": "codex",
+    "client_version": "0.1.0",
+    "omp_worker_version": "0.1.0",
+    "environment_os": "win32-x64"
+  },
+  "wall_clock_seconds": 0.0,
+  "primary_harness_tool_calls": null,
+  "acceptance_result": "passed",
+  "retry_count": 0,
+  "token_telemetry": {
+    "available": false,
+    "telemetry_source": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "total_tokens": null,
+    "disclosure": "Primary harness does not expose per-session token telemetry in this environment. Numerical values are marked unavailable in compliance with the non-fabrication rule. When extracting from local Codex session files, set telemetry_source to 'codex_session_jsonl' and record observed delta values."
+  },
+  "cost_telemetry": {
+    "available": false,
+    "total_cost_usd": null,
+    "disclosure": "Per-session financial cost is not exposed or operates under a flat subscription/quota model without dollar breakdown. Dollars are not inferred from token counts or plans."
+  },
+  "notes": "Template placeholder. Fill with real operator observations upon trial completion."
+}
