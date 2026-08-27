@@ -43,28 +43,56 @@
 
 ## 安装与快速开始
 
-### 前置条件
+### 1. 安装 OMP
+前往 [Oh My Pi (OMP) 官方项目](https://github.com/can1357/oh-my-pi) 安装 OMP（要求 Node.js `>= 22.0.0`）。
 
-- **Node.js**：`>= 22.0.0`（依赖原生 ECMAScript Modules 支持）。
-- **OMP CLI**：需单独安装 [Oh My Pi (OMP)](https://github.com/can1357/oh-my-pi) CLI 并置于系统 `PATH` 中（或通过环境变量 `OMP_WORKER_OMP_COMMAND` 指定命令路径）。
-
-`omp-worker-mcp` 作为 MCP 服务器运行，由 stdio MCP 宿主（如 Codex、Claude Code 等）通过 `npx` 或全局安装命令调起，并非独立的交互式命令行工具。
-
-### 宿主 Stdio 启动命令（推荐）
+### 2. 验证 OMP 可用性
+在终端中运行以下命令，验证 OMP CLI 是否可用：
 
 ```bash
-# 由 MCP 宿主配置（如 mcpServers）自动调起的启动命令
-npx -y omp-worker-mcp
+omp --version
 ```
 
-### 全局安装
+*排错提示：如果 `omp` 不在系统 `PATH` 中，请在 MCP 配置中将 `OMP_WORKER_OMP_COMMAND` 环境变量设置为其可执行文件的绝对路径。*
+
+### 3. 配置宿主并重启
+在主控 Harness 的 stdio `mcpServers` 配置中添加 `omp-worker-mcp`（推荐使用 `npx`），然后重启宿主 Harness：
+
+```json
+{
+  "mcpServers": {
+    "omp-worker": {
+      "command": "npx",
+      "args": ["-y", "omp-worker-mcp"],
+      "env": {
+        "OMP_WORKER_OMP_COMMAND": "omp"
+      }
+    }
+  }
+}
+```
+
+### 4. 执行安全的首次任务
+在主控 Harness 中调用 `omp_run_compact`，传入工作区的绝对路径，执行一次只读的仓库检查以验证端到端委托链路：
+
+```json
+{
+  "cwd": "/absolute/path/to/workspace",
+  "goal": "检查仓库目录结构、校验依赖并报告顶层目录，不得修改任何文件。"
+}
+```
+
+---
+
+### 其他安装方式（可选）
+
+#### 全局安装（可选）
 
 ```bash
-# 通过 npm 全局安装
 npm install -g omp-worker-mcp
 ```
 
-### 从源码编译
+#### 从源码编译
 
 ```bash
 git clone https://github.com/divenire990/omp-worker-mcp.git
@@ -73,7 +101,6 @@ npm ci
 npm run build
 npm test
 ```
-
 ---
 
 ## 最小 MCP 配置
@@ -124,8 +151,8 @@ npm test
 - **外部上游引擎**：调用 [Oh My Pi (OMP)](https://github.com/can1357/oh-my-pi) CLI（基于 MIT 许可证）。上游二进制文件**不随本包分发**，需自行安装并置于 `PATH` 中。
 - **运行环境要求**：Node.js **>= 22.0.0**（依赖原生 ECMAScript Modules 与现代 Node.js 标准库能力）。
 - **操作系统支持**：
-  - **Windows** (`win32`) 与 **macOS** (`darwin` / Apple Silicon)：经由真实 Node 22+ 与 OMP CLI E2E 完整验证支持。
-  - **Linux** (`x86_64`, `aarch64`)：目前为架构设计目标，待在生产环境中进一步验证。
+  - **Windows** 与 **macOS（Apple Silicon）**：已通过 Node.js 22+ 与真实 OMP CLI 端到端测试验证。
+  - **Linux**：架构已支持，仍待更广泛的生产环境验证。
 - **支持等级**：
   - **作者实测**：Codex（作者个人主力本机工作流实测；不构成跨平台 CI 集成保证）。
   - **官方文档或可复制配置**：Claude Code、WorkBuddy、Claude Desktop、Cursor、Cline、VS Code、GitHub Copilot CLI（*未在 CI 做集成测试*）。

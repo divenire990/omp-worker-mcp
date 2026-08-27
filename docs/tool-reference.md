@@ -42,11 +42,11 @@
 To ensure predictable and collision-free agent execution, `omp-worker-mcp` enforces a three-part safety contract:
 
 ### 1. Write vs. Read-Only Boundaries
-- **`write` Tasks**: Must explicitly declare the workspace file paths or directories they intend to modify via the `ownership` parameter.
-- **`read_only` Tasks**: Prohibited from performing workspace modifications; verified during review to ensure repository state integrity.
+- **`write` Tasks**: Must explicitly declare the workspace file paths or directories they intend to modify via the `ownership` parameter; declared boundaries are supplied as worker constraints.
+- **`read_only` Tasks**: Declare no write scope, and read-only constraints are supplied to the worker prompt (enforcement relies on worker constraints and review rather than OS-level sandboxing).
 
 ### 2. DAG Overlap & Collision Verification
-- **Disjoint Ownership**: Parallel tasks within the same batch cannot declare overlapping write boundaries.
+- **Disjoint Ownership**: The server validates batch groups and rejects concurrent tasks with overlapping write scopes.
 - **Sequential Dependencies**: Tasks that must touch shared files or directories must declare explicit linear dependencies via `depends_on`.
 - **Topological Validation**: The server validates the task graph at submission time, rejecting circular dependencies and conflicting ownership before spawning any worker processes.
 

@@ -43,28 +43,56 @@
 
 ## Installation & Quick Start
 
-### Prerequisites
+### 1. Install OMP
+Install [Oh My Pi (OMP) from its official project](https://github.com/can1357/oh-my-pi) (requires Node.js `>= 22.0.0`).
 
-- **Node.js**: `>= 22.0.0` (native ECMAScript Modules support).
-- **OMP CLI**: A separately installed [Oh My Pi (OMP)](https://github.com/can1357/oh-my-pi) CLI available in your system `PATH` (or configured via `OMP_WORKER_OMP_COMMAND`).
-
-`omp-worker-mcp` is an MCP server launched by stdio MCP hosts (such as Codex, Claude Code, etc.) using `npx` or a global install, rather than a standalone interactive CLI.
-
-### Host Stdio Command (Recommended)
+### 2. Verify OMP Reachability
+Verify that the OMP CLI is reachable in your environment:
 
 ```bash
-# Executed by your stdio MCP host configuration (e.g., mcpServers)
-npx -y omp-worker-mcp
+omp --version
 ```
 
-### Global Installation
+*Troubleshooting: If `omp` is not on your `PATH`, set `OMP_WORKER_OMP_COMMAND` to its executable path in your MCP configuration.*
+
+### 3. Add MCP Configuration & Restart Host
+Add `omp-worker-mcp` to your host harness's stdio `mcpServers` configuration (`npx` recommended) and restart the host harness:
+
+```json
+{
+  "mcpServers": {
+    "omp-worker": {
+      "command": "npx",
+      "args": ["-y", "omp-worker-mcp"],
+      "env": {
+        "OMP_WORKER_OMP_COMMAND": "omp"
+      }
+    }
+  }
+}
+```
+
+### 4. Verify with a Safe First Task
+Invoke `omp_run_compact` from your host harness with an absolute workspace path to verify the full delegation chain with a read-only repository inspection:
+
+```json
+{
+  "cwd": "/absolute/path/to/workspace",
+  "goal": "Inspect the repository structure, verify dependencies, and report top-level directories. Do not modify any files."
+}
+```
+
+---
+
+### Alternative Installation Options
+
+#### Global Installation (Optional)
 
 ```bash
-# Install globally via npm
 npm install -g omp-worker-mcp
 ```
 
-### Building from Source
+#### Building from Source
 
 ```bash
 git clone https://github.com/divenire990/omp-worker-mcp.git
@@ -73,7 +101,6 @@ npm ci
 npm run build
 npm test
 ```
-
 ---
 
 ## Minimal MCP Configuration
@@ -124,8 +151,8 @@ Choose your starting point based on workflow complexity:
 - **Upstream Engine**: Interfaces with the [Oh My Pi (OMP)](https://github.com/can1357/oh-my-pi) CLI (MIT License). The upstream binary is **not bundled** and must be installed separately in your local runtime `PATH`.
 - **Runtime Requirement**: Node.js **>= 22.0.0** (native ECMAScript Modules and modern Node.js APIs).
 - **Operating Systems**:
-  - **Windows** (`win32`) & **macOS** (`darwin` / Apple Silicon): Fully verified with Node 22+ and real OMP CLI E2E testing.
-  - **Linux** (`x86_64`, `aarch64`): Architectural design target; awaiting broader production verification.
+  - **Windows** and **macOS (Apple Silicon)**: Verified with Node.js 22+ and real OMP CLI end-to-end testing.
+  - **Linux**: Supported by the architecture, but awaiting broader production verification.
 - **Support Tiers**:
   - **Author-Verified**: Codex (author's daily local workflow; not a cross-platform CI guarantee).
   - **Documented / Reproducible**: Claude Code, WorkBuddy, Claude Desktop, Cursor, Cline, VS Code, GitHub Copilot CLI (*not CI integration-tested*).
