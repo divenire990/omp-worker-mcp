@@ -61,13 +61,24 @@ export async function ensureJobDirectory(jobId: string): Promise<string> {
 }
 
 export async function readJob(jobId: string): Promise<JobRecord> {
-  const content = await readFile(jobFilePath(jobId), "utf8").catch((error: NodeJS.ErrnoException) => {
-    if (error.code === "ENOENT") {
-      throw new Error(`Unknown job_id: ${jobId}`);
+  const target = jobFilePath(jobId);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const content = await readFile(target, "utf8");
+      return JSON.parse(content) as JobRecord;
+    } catch (error: unknown) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (attempt < 2 && (code === "ENOENT" || error instanceof SyntaxError)) {
+        await delay(25);
+        continue;
+      }
+      if (code === "ENOENT") {
+        throw new Error(`Unknown job_id: ${jobId}`);
+      }
+      throw error;
     }
-    throw error;
-  });
-  return JSON.parse(content) as JobRecord;
+  }
+  throw new Error(`Unknown job_id: ${jobId}`);
 }
 
 async function writeAtomicFile(target: string, content: string): Promise<void> {
@@ -191,13 +202,24 @@ export async function ensureGroupDirectory(groupId: string): Promise<string> {
 }
 
 export async function readGroup(groupId: string): Promise<GroupRecord> {
-  const content = await readFile(groupFilePath(groupId), "utf8").catch((error: NodeJS.ErrnoException) => {
-    if (error.code === "ENOENT") {
-      throw new Error(`Unknown group_id: ${groupId}`);
+  const target = groupFilePath(groupId);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const content = await readFile(target, "utf8");
+      return JSON.parse(content) as GroupRecord;
+    } catch (error: unknown) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (attempt < 2 && (code === "ENOENT" || error instanceof SyntaxError)) {
+        await delay(25);
+        continue;
+      }
+      if (code === "ENOENT") {
+        throw new Error(`Unknown group_id: ${groupId}`);
+      }
+      throw error;
     }
-    throw error;
-  });
-  return JSON.parse(content) as GroupRecord;
+  }
+  throw new Error(`Unknown group_id: ${groupId}`);
 }
 
 export async function writeGroup(record: GroupRecord): Promise<void> {

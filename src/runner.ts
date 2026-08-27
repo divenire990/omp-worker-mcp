@@ -9,7 +9,7 @@ import { cancellationFilePath, clearCancellationRequest, readJob, writeJob } fro
 import type { JobRecord } from "./types.js";
 
 export async function terminateOwnedProcessTree(child: ChildProcess): Promise<void> {
-  if (!child.pid || child.exitCode !== null) return;
+  if (!child.pid || child.exitCode !== null || child.signalCode !== null || child.killed) return;
   if (process.platform === "win32") {
     await new Promise<void>((resolve) => {
       const killer = spawn("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], {
@@ -17,15 +17,37 @@ export async function terminateOwnedProcessTree(child: ChildProcess): Promise<vo
         stdio: "ignore",
       });
       killer.once("error", () => {
-        child.kill("SIGTERM");
+        try {
+          child.kill("SIGTERM");
+        } catch {}
         resolve();
       });
       killer.once("close", () => resolve());
     });
     return;
   }
-  child.kill("SIGTERM");
-  setTimeout(() => child.kill("SIGKILL"), 5_000).unref();
+  try {
+    child.kill("SIGTERM");
+  } catch {
+    return;
+  }
+  let killTimer: NodeJS.Timeout | null = setTimeout(() => {
+    killTimer = null;
+    if (child.exitCode === null && child.signalCode === null) {
+      try {
+        child.kill("SIGKILL");
+      } catch {}
+    }
+  }, 5_000);
+  killTimer.unref();
+  const clearKillTimer = () => {
+    if (killTimer !== null) {
+      clearTimeout(killTimer);
+      killTimer = null;
+    }
+  };
+  child.once("exit", clearKillTimer);
+  child.once("close", clearKillTimer);
 }
 
 async function main(): Promise<void> {

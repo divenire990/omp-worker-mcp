@@ -275,6 +275,9 @@ async function launchRunner(job: JobRecord): Promise<void> {
     stdio: "ignore",
     env: process.env,
   });
+  child.on("error", (error) => {
+    console.error(`Failed to launch runner for job ${job.id}:`, error);
+  });
   child.unref();
 }
 
@@ -284,6 +287,9 @@ async function launchGroupRunner(groupId: string): Promise<void> {
     windowsHide: true,
     stdio: "ignore",
     env: process.env,
+  });
+  child.on("error", (error) => {
+    console.error(`Failed to launch group runner for group ${groupId}:`, error);
   });
   child.unref();
 }

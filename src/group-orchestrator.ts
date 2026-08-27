@@ -57,6 +57,9 @@ async function launchRunner(job: JobRecord): Promise<void> {
     stdio: "ignore",
     env: process.env,
   });
+  child.on("error", (error) => {
+    console.error(`Failed to launch runner for job ${job.id}:`, error);
+  });
   child.unref();
 }
 
