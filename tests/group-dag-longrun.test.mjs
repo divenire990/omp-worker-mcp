@@ -24,6 +24,25 @@ async function createTestClient(stateRoot) {
   return { client, transport };
 }
 
+async function waitForGroupStatus(groupJsonPath, expectedStatus, timeoutMs = 15000, intervalMs = 200) {
+  const deadline = Date.now() + timeoutMs;
+  let lastRecord;
+
+  while (Date.now() < deadline) {
+    try {
+      lastRecord = JSON.parse(await readFile(groupJsonPath, "utf8"));
+      if (lastRecord.status === expectedStatus) return lastRecord;
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  throw new Error(
+    `Expected group to reach ${expectedStatus} within ${timeoutMs}ms, got ${lastRecord?.status ?? "missing"}`,
+  );
+}
+
 // 缺陷 1：批任务初始有限等待应在未完成时迅速返回 running + group_id，而不是无限阻塞直到全部完成
 test("Red Test 1: omp_run_batch_compact with limited wait_seconds returns running status and group_id when batch is still executing", async () => {
   const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-worker-red-1-"));
@@ -107,11 +126,10 @@ test("Red Test 2: Group coordinator and subsequent DAG tasks continue running in
     await client.close().catch(() => {});
   }
 
-  // 此时 MCP 服务器进程已随着 transport.close 被销毁
-  // 如果没有独立的 detached group coordinator 进程，step-2 和 step-3 永远不会被调度执行
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-
-  // 查找并检查 group.json 状态
+  // 此时 MCP 服务器进程已随着 transport.close 被销毁。
+  // 如果没有独立的 detached group coordinator，step-2 / step-3 永远不会完成。
+  // 不使用固定 sleep：Windows hosted runner 的进程调度可能明显慢于 Linux/macOS，
+  // 因此在有界时间内轮询持久化状态，仍严格要求最终达到 completed。
   const groupsDir = path.join(stateRoot, "groups");
   const { readdir } = await import("node:fs/promises");
   const groupDirs = await readdir(groupsDir).catch(() => []);
@@ -119,14 +137,8 @@ test("Red Test 2: Group coordinator and subsequent DAG tasks continue running in
   const groupId = groupDirs[0];
 
   const groupJsonPath = path.join(groupsDir, groupId, "group.json");
-  const content = await readFile(groupJsonPath, "utf8");
-  const groupRecord = JSON.parse(content);
+  const groupRecord = await waitForGroupStatus(groupJsonPath, "completed");
 
-  assert.equal(
-    groupRecord.status,
-    "completed",
-    `Expected group to reach completed status in background, got ${groupRecord.status}`,
-  );
   const step3 = groupRecord.tasks.find((t) => t.id === "step-3");
   assert.equal(step3?.status, "completed", "Expected dependent step-3 to be scheduled and completed in background");
 });
