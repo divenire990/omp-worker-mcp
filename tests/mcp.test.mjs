@@ -33,15 +33,23 @@ const TEST_TERMINAL_STATUSES = new Set([
   "awaiting_review",
 ]);
 
-async function waitForTerminal(client, jobId, { allowAwaitingReview = false } = {}) {
-  for (let index = 0; index < 40; index += 1) {
+async function waitForTerminal(
+  client,
+  jobId,
+  { allowAwaitingReview = false, timeoutMs = 90_000 } = {},
+) {
+  const deadline = Date.now() + timeoutMs;
+  let lastStatus = "unknown";
+
+  while (Date.now() < deadline) {
     const result = await client.callTool({
       name: "omp_wait",
       arguments: { job_id: jobId, wait_seconds: 1 },
     });
     const structured = result.structuredContent;
-    if (TEST_TERMINAL_STATUSES.has(structured?.status)) {
-      if (structured.status === "awaiting_review" && !allowAwaitingReview) {
+    lastStatus = structured?.status ?? "unknown";
+    if (TEST_TERMINAL_STATUSES.has(lastStatus)) {
+      if (lastStatus === "awaiting_review" && !allowAwaitingReview) {
         throw new Error(
           `Fake OMP task reached unexpected terminal state 'awaiting_review' (envelope missing or unparsed). error=${structured.error || "none"}, details_path=${structured.details_path || "none"}`
         );
@@ -49,7 +57,9 @@ async function waitForTerminal(client, jobId, { allowAwaitingReview = false } = 
       return structured;
     }
   }
-  throw new Error(`Fake OMP task did not reach a terminal state for job ${jobId}`);
+  throw new Error(
+    `Fake OMP task did not reach a terminal state within ${timeoutMs}ms for job ${jobId}; last_status=${lastStatus}`,
+  );
 }
 
 test("MCP exposes all nine tools including omp_run_batch_compact, omp_wait_group, omp_cancel_group", async () => {
@@ -104,11 +114,9 @@ test("omp_run_compact completes within wait_seconds and returns compact summary 
     assert.deepEqual(structured.remaining, []);
     assert.equal(typeof structured.details_path, "string");
 
-    // Strictly assert NO final_response or attempts array leaked in compact output
     assert.equal("final_response" in structured, false);
     assert.equal("attempts" in structured, false);
 
-    // Verify details_path points to readable on-disk job file
     const storedJob = JSON.parse(await readFile(structured.details_path, "utf8"));
     assert.equal(storedJob.id, structured.job_id);
     assert.equal(storedJob.status, "completed");
@@ -143,7 +151,6 @@ test("omp_run_compact returns running status and job_id on timeout without leaki
     assert.equal("attempts" in structured, false);
     assert.equal(structured.details_path, undefined);
 
-    // Can subsequently cancel the running job
     const cancelRes = await client.callTool({
       name: "omp_cancel",
       arguments: { job_id: structured.job_id, reason: "Cancel slow test" },
@@ -192,7 +199,6 @@ test("Existing low-level tools (delegate, wait, result, continue, cancel) regres
   const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-worker-mcp-test-"));
   const { client } = await createTestClient(stateRoot);
   try {
-    // 1. Delegate
     const delegateRes = await client.callTool({
       name: "omp_delegate",
       arguments: {
@@ -203,11 +209,9 @@ test("Existing low-level tools (delegate, wait, result, continue, cancel) regres
     const jobId = delegateRes.structuredContent.job_id;
     assert.ok(jobId);
 
-    // 2. Wait
     const terminal = await waitForTerminal(client, jobId);
     assert.equal(terminal.status, "completed");
 
-    // 3. Result
     const resultRes = await client.callTool({
       name: "omp_result",
       arguments: { job_id: jobId },
@@ -217,7 +221,6 @@ test("Existing low-level tools (delegate, wait, result, continue, cancel) regres
     assert.ok(fullResult.final_response);
     assert.equal(fullResult.attempts.length, 1);
 
-    // 4. Continue
     const continueRes = await client.callTool({
       name: "omp_continue",
       arguments: {
@@ -230,7 +233,6 @@ test("Existing low-level tools (delegate, wait, result, continue, cancel) regres
     assert.equal(contTerminal.status, "completed");
     assert.equal(contTerminal.summary, "Corrected result");
 
-    // 5. Cancel test on a slow job
     const slowDelegate = await client.callTool({
       name: "omp_delegate",
       arguments: {
