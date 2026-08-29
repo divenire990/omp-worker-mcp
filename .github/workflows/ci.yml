@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -34,6 +34,7 @@ jobs:
         run: npm test
 
       - name: Run repeated low-level and fast-completion regression tests
+        shell: bash
         run: |
           for i in 1 2 3 4 5; do
             echo "=== Repeat run $i/5 ==="
