@@ -33,7 +33,10 @@ async function resolveExistingDirectory(value: string, label: string): Promise<s
 }
 
 export function parseAllowedRoots(raw = process.env[ALLOWED_ROOTS_ENV]): string[] | undefined {
-  if (raw === undefined || raw.trim() === "") return undefined;
+  if (raw === undefined) return undefined;
+  if (raw.trim() === "") {
+    throw new Error(`${ALLOWED_ROOTS_ENV} must be a non-empty JSON array of absolute directory paths`);
+  }
 
   let parsed: unknown;
   try {
