@@ -6,6 +6,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { extractAssistantText, extractSessionId, parseResultEnvelope } from "./protocol.js";
 import { cancellationFilePath, clearCancellationRequest, readJob, writeJob } from "./job-store.js";
+import { validateAllowedWorkingDirectory } from "./security.js";
 import type { JobRecord } from "./types.js";
 
 export async function terminateOwnedProcessTree(child: ChildProcess): Promise<void> {
@@ -58,6 +59,11 @@ async function main(): Promise<void> {
   const attempt = job.attempts.find((item) => item.number === job.currentAttempt);
   if (!attempt) throw new Error(`Attempt ${job.currentAttempt} is missing`);
 
+  // Re-resolve the working directory immediately before execution. When
+  // OMP_WORKER_ALLOWED_ROOTS is configured this rejects path-prefix tricks,
+  // symlink/junction escapes, and directories outside the approved roots.
+  const executionCwd = await validateAllowedWorkingDirectory(job.cwd);
+
   attempt.status = "running";
   attempt.runnerPid = process.pid;
   attempt.startedAt = new Date().toISOString();
@@ -89,7 +95,7 @@ async function main(): Promise<void> {
   const args = [
     ...prefixArgs,
     "--cwd",
-    job.cwd,
+    executionCwd,
     "--mode",
     "json",
     "--auto-approve",
@@ -106,7 +112,7 @@ async function main(): Promise<void> {
   const stdoutStream = createWriteStream(attempt.stdoutPath, { flags: "w" });
   const stderrStream = createWriteStream(attempt.stderrPath, { flags: "w" });
   const child = spawn(command, args, {
-    cwd: job.cwd,
+    cwd: executionCwd,
     env: process.env,
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],

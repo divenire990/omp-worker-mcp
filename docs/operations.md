@@ -22,11 +22,14 @@ All operational behavior can be configured via environment variables in the host
 | :--- | :--- | :--- |
 | `OMP_WORKER_OMP_COMMAND` | Path or executable name for the OMP CLI binary. | `omp` |
 | `OMP_WORKER_OMP_PREFIX_ARGS` | JSON array string of arguments prepended to OMP CLI invocations (e.g. `["--profile", "default"]`). | `[]` |
+| `OMP_WORKER_ALLOWED_ROOTS` | Optional non-empty JSON array of absolute directories that delegated job `cwd` values must resolve inside. Paths are canonicalized with `realpath`; sibling-prefix and symlink/junction escapes are rejected before OMP starts. Leave the variable completely unset for backward-compatible unrestricted cwd selection. If the variable is present but empty or malformed, execution fails closed. Strongly recommended for Secure MCP Tunnel or other remote exposure. | *(unset)* |
 | `OMP_WORKER_STATE_DIR` | Base directory for storing job states, prompt files, and execution logs. | `~/.codex/state/omp-worker` |
 | `OMP_WORKER_BROWSER_RULES` | Optional custom browser automation instructions injected into worker prompts. | *(none)* |
 | `OMP_WORKER_RETENTION_TTL_SECONDS` | Optional retention TTL in seconds for terminal job/group records. Unset disables TTL cleanup. | *(none)* |
 | `OMP_WORKER_RETENTION_MAX_BYTES` | Optional maximum disk storage in bytes for terminal records. Unset disables size cleanup. | *(none)* |
 | `OMP_WORKER_AUTO_CLEANUP_ON_START` | Optional boolean (`"true"` / `"1"`) to trigger a cleanup sweep once when the MCP server starts. | `false` |
+
+`OMP_WORKER_ALLOWED_ROOTS` is an execution-entry allowlist, not an OS sandbox. OMP and its child processes still inherit the filesystem and process privileges of the account running the MCP server. Use a dedicated low-privilege account, ACLs, a container, or a VM when stronger isolation is required.
 
 ---
 
