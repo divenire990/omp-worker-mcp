@@ -24,18 +24,32 @@ async function createTestClient(stateRoot) {
   return { client, transport };
 }
 
-async function waitForTerminal(client, jobId) {
+const TEST_TERMINAL_STATUSES = new Set([
+  "completed",
+  "failed",
+  "cancelled",
+  "timed_out",
+  "blocked",
+  "awaiting_review",
+]);
+
+async function waitForTerminal(client, jobId, { allowAwaitingReview = false } = {}) {
   for (let index = 0; index < 40; index += 1) {
     const result = await client.callTool({
       name: "omp_wait",
       arguments: { job_id: jobId, wait_seconds: 1 },
     });
     const structured = result.structuredContent;
-    if (["completed", "failed", "cancelled", "timed_out", "blocked"].includes(structured.status)) {
+    if (TEST_TERMINAL_STATUSES.has(structured?.status)) {
+      if (structured.status === "awaiting_review" && !allowAwaitingReview) {
+        throw new Error(
+          `Fake OMP task reached unexpected terminal state 'awaiting_review' (envelope missing or unparsed). error=${structured.error || "none"}, details_path=${structured.details_path || "none"}`
+        );
+      }
       return structured;
     }
   }
-  throw new Error("Fake OMP task did not reach a terminal state");
+  throw new Error(`Fake OMP task did not reach a terminal state for job ${jobId}`);
 }
 
 test("MCP exposes all nine tools including omp_run_batch_compact, omp_wait_group, omp_cancel_group", async () => {
@@ -232,6 +246,45 @@ test("Existing low-level tools (delegate, wait, result, continue, cancel) regres
     assert.ok(cancelRes.structuredContent);
     const cancelTerminal = await waitForTerminal(client, slowJobId);
     assert.equal(cancelTerminal.status, "cancelled");
+  } finally {
+    await client.close();
+  }
+});
+
+test("Fast fake OMP structured output completes with parsed envelope and does not become awaiting_review", async () => {
+  const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-worker-mcp-test-"));
+  const { client } = await createTestClient(stateRoot);
+  try {
+    const delegateRes = await client.callTool({
+      name: "omp_delegate",
+      arguments: {
+        goal: "Fast completion structured envelope regression test",
+        cwd: projectRoot,
+      },
+    });
+    const jobId = delegateRes.structuredContent.job_id;
+    assert.ok(jobId);
+
+    const terminal = await waitForTerminal(client, jobId);
+    assert.equal(terminal.status, "completed");
+    assert.notEqual(terminal.status, "awaiting_review");
+    assert.equal(terminal.summary, "Initial result");
+    assert.deepEqual(terminal.artifacts, [{ path: "result.txt", description: "Fake integration artifact" }]);
+    assert.deepEqual(terminal.verification, ["fake check passed"]);
+    assert.deepEqual(terminal.remaining, []);
+
+    const resultRes = await client.callTool({
+      name: "omp_result",
+      arguments: { job_id: jobId },
+    });
+    const fullResult = resultRes.structuredContent;
+    assert.equal(fullResult.job_id, jobId);
+    assert.equal(fullResult.status, "completed");
+    assert.notEqual(fullResult.status, "awaiting_review");
+    assert.ok(fullResult.final_response);
+    assert.match(fullResult.final_response, /OMP_WORKER_RESULT/);
+    assert.equal(fullResult.attempts.length, 1);
+    assert.equal(fullResult.attempts[0].exit_code, 0);
   } finally {
     await client.close();
   }

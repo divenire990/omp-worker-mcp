@@ -119,6 +119,9 @@ async function main(): Promise<void> {
   let sessionId = job.sessionId;
   let finalResponse = "";
   const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
+  const linesClosed = new Promise<void>((resolve) => {
+    lines.once("close", resolve);
+  });
   lines.on("line", (line) => {
     try {
       const event = JSON.parse(line) as unknown;
@@ -152,6 +155,7 @@ async function main(): Promise<void> {
   });
   clearInterval(cancelPoll);
   clearTimeout(hardTimeout);
+  await linesClosed;
   await new Promise<void>((resolve) => stdoutStream.end(resolve));
   await new Promise<void>((resolve) => stderrStream.end(resolve));
 
