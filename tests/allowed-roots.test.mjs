@@ -56,6 +56,10 @@ test("allowed roots reject symlink or junction escapes", async (t) => {
 test("invalid allowed-root configuration fails closed", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "omp-worker-allowed-root-"));
   await assert.rejects(
+    () => validateAllowedWorkingDirectory(root, ""),
+    /non-empty JSON array/,
+  );
+  await assert.rejects(
     () => validateAllowedWorkingDirectory(root, "not-json"),
     /must be a JSON array/,
   );
