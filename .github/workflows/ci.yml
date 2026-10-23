@@ -83,5 +83,6 @@ jobs:
         with:
           name: release-bundle-${{ github.sha }}
           path: .release-artifact/*
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
