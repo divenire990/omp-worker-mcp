@@ -38,7 +38,7 @@ jobs:
         run: |
           for i in 1 2 3 4 5; do
             echo "=== Repeat run $i/5 ==="
-            node --test tests/runner.test.mjs tests/mcp.test.mjs
+            node --test tests/runner.test.mjs tests/mcp.test.mjs tests/regression-e2e.test.mjs
           done
 
       - name: Verify package bundle
