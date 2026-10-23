@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Execution-root allowlist via `OMP_WORKER_ALLOWED_ROOTS` (`realpath` canonicalization, sibling-prefix and symlink/junction escape rejection, fail-closed validation) and bilingual ChatGPT Secure MCP Tunnel guides (`docs/chatgpt-secure-tunnel.md`, `docs/chatgpt-secure-tunnel.zh-CN.md`).
+- Windows CI coverage alongside macOS and Ubuntu in `.github/workflows/ci.yml`, plus resilient terminal-wait and detached DAG long-run tests.
+- `CONTRIBUTING.md`, `CONTRIBUTING.zh-CN.md`, `SECURITY.md`, issue / pull request templates and Dependabot configuration.
+
+### Documentation
+
+- Rewrote `README.md` and `README.zh-CN.md` around the supervisor–worker workflow: who it is for, per-client quick start, a delegation policy snippet, single-task and DAG examples, tool table, safety model and FAQ.
+- Scoped `OMP_WORKER_ALLOWED_ROOTS` and Secure MCP Tunnel instructions to distinguish unreleased `master` source (identified by commit SHA, while `package.json` still reports `0.1.1`) from published npm `0.1.1`, which predates the allowlist check, with reproducible source-build instructions for remote tunnel deployments.
+- Updated Secure MCP Tunnel commands to match current `tunnel-client` CLI (`init --sample sample_mcp_stdio_local` → `doctor` → `run`, plus optional `runtimes connect`) and OpenAI permission requirements (`CONTROL_PLANE_API_KEY` with Tunnels Read + Use).
+- Updated Codex direct namespace guidance to distinguish the current official `features.code_mode.direct_only_tool_namespaces` setting from legacy top-level `direct_only_tool_namespaces` configs, clarifying that it is an optional Code Mode preference.
+- Replaced the README hero animation with an architecture diagram (`assets/how-it-works.svg`, `assets/how-it-works.zh-CN.svg`) and added a social preview image (`assets/social-preview.png`).
+- Corrected on-disk state and log filenames (`job.json`, `group.json`, `attempt-NN.prompt.md`, `attempt-NN.stdout.jsonl`, `attempt-NN.stderr.log`), `omp_wait` (`wait_seconds`) parameter docs, non-terminal status names, and platform/client verification tables across `COMPATIBILITY.md`, `docs/operations*.md`, `docs/tool-reference*.md`, and `.github/ISSUE_TEMPLATE/bug_report.yml`.
+
 ## [0.1.1] - 2026-08-27
 
 ### Added

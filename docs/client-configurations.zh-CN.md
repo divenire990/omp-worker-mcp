@@ -31,7 +31,7 @@
 | 支持等级 | 宿主 / 客户端 | 支持状态与验证依据 | 说明与注意事项 |
 | :--- | :--- | :--- | :--- |
 | **作者实测** | **Codex** | 作者当前主力本机工作流 | 在作者日常开发环境中实测验证；不构成跨平台 CI 集成保证。 |
-| **官方文档或可复制配置示例** | **Claude Code**、**Cursor**、**VS Code / GitHub Copilot**、**Windsurf Cascade**、**Continue** | 源自官方公开文档或可直接复现的标准 JSON / YAML 配置形态 | *未在本仓库 CI 进行集成测试*。反映官方公开规范与原生 stdio 子进程执行能力。 |
+| **官方文档或可复制配置示例** | **ChatGPT 网页版（Secure MCP Tunnel）**、**Claude Code**、**Cursor**、**VS Code / GitHub Copilot**、**Windsurf Cascade**、**Continue** | 源自官方公开文档或可直接复现的标准 JSON / YAML / CLI 配置形态 | *未在本仓库 CI 进行集成测试*。反映官方公开规范与原生 stdio 子进程执行能力。ChatGPT 网页版接入详见 [ChatGPT Secure MCP Tunnel 指南](chatgpt-secure-tunnel.zh-CN.md)。 |
 | **云端 / 远程宿主** | Web 端或云端托管的 Agent 容器环境 | 有条件支持（取决于远程运行容器） | *不提供开箱即用保证*。要求远程环境需具备 Node.js >= 22、处于 PATH 的 OMP CLI、可写工作区及子进程启动权限。 |
 
 ---
@@ -63,7 +63,7 @@
 ### 4.1 Codex 配置
 
 - **配置文件位置**：`~/.codex/config.toml`（Windows 路径为 `C:\Users\<username>\.codex\config.toml`）。
-- **官方文档参考**：Codex 专属工作流与命名空间配置已在仓库内部文档中详细说明（见下文）。
+- **官方文档参考**：[Codex 官方配置参考](https://learn.chatgpt.com/docs/config-file/config-reference) 与仓库内 [作者工作流指南](author-workflow.zh-CN.md#codex-专属直接命名空间配置)。
 
 #### 最小配置示例
 
@@ -80,11 +80,11 @@ OMP_WORKER_OMP_COMMAND = "omp"
 
 *若使用本地源码构建，可将 `command` 改为 `"node"`，`args` 设为 `["<仓库路径>/dist/index.js"]`。*
 
-#### 直接命名空间访问与模型选择边界
+#### 可选的 Code Mode 直接命名空间访问与模型选择边界
 
-在 Codex 中，注册 MCP 服务使服务端进程连通，但直接工具命名空间访问由 `~/.codex/config.toml` 中的 `direct_only_tool_namespaces` 控制。将 `"mcp__omp_worker"` 加入该列表可使 Codex 会话无障碍地直接调用相关工具。
+在 Codex 中，仅注册 `[mcp_servers.omp-worker]` 即可使工具可用。若您启用了 Codex 的 Code Mode 并希望直接调用 `omp-worker` 工具而不经过 code-mode 包装，可按 [Codex 官方配置参考](https://learn.chatgpt.com/docs/config-file/config-reference) 在 `~/.codex/config.toml` 中配置 `features.code_mode.direct_only_tool_namespaces = ["mcp__omp_worker"]`（旧版 Codex 曾使用顶层 `direct_only_tool_namespaces` 键）。
 
-> **重要提示**：`direct_only_tool_namespaces` 属于 Codex 专有机制，其他任何宿主 Harness 都不使用、不支持也不需要此项设置。请直接参阅 [作者工作流指南：Codex 专属直接命名空间配置](author-workflow.zh-CN.md#codex-专属直接命名空间配置)。
+> **重要提示**：该配置项仅是 Codex Code Mode 的可选偏好项，并非注册或选用 MCP 服务的必要条件，其他任何宿主 Harness 也不使用此项设置。当前与旧版配置示例请参阅 [作者工作流指南：Codex 专属直接命名空间配置](author-workflow.zh-CN.md#codex-专属直接命名空间配置)。
 
 - **激活与验证**：保存 `config.toml` 并重启 Codex。您可运行 [一次性验证提示词](author-workflow.zh-CN.md#一次性验证提示词) 确认连通状态。
 - **选择策略边界**：注册服务仅将工具暴露给 Codex，并不保证模型会在每次交互中自动选择该工具。请通过项目级 `AGENTS.md` 策略文件指导任务委派。
@@ -265,14 +265,14 @@ mcpServers:
 
 有关各主流客户端的高级功能、工具审批机制或 MCP 最新配置规范，请参阅其官方文档：
 
+- **Codex**：[Codex 官方配置参考](https://learn.chatgpt.com/docs/config-file/config-reference) · [作者工作流：Codex 专属直接命名空间配置](author-workflow.zh-CN.md#codex-专属直接命名空间配置)
+- **ChatGPT Secure MCP Tunnel**：[OpenAI Secure MCP Tunnels 官方指南](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels) · [ChatGPT Secure MCP Tunnel 接入指南](chatgpt-secure-tunnel.zh-CN.md)
 - **Claude Code**：[Claude Code MCP 官方文档](https://code.claude.com/docs/en/mcp)
 - **Cursor**：[Cursor MCP 官方文档](https://docs.cursor.com/context/model-context-protocol)
 - **VS Code**：[Visual Studio Code MCP 官方文档](https://code.visualstudio.com/docs/agent-customization/mcp-servers)
 - **GitHub Copilot / Agent Host**：[GitHub Copilot MCP 官方文档](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)
 - **Windsurf Cascade**：[Windsurf MCP 官方文档](https://docs.windsurf.com/windsurf/cascade/mcp)
 - **Continue**：[Continue MCP 官方文档](https://docs.continue.dev/customize/deep-dives/mcp)
-- **Codex (内部指南)**：[作者工作流：Codex 专属直接命名空间配置](author-workflow.zh-CN.md#codex-专属直接命名空间配置)
-
 ---
 
 ## 6. 下一步：启用工作流选择策略

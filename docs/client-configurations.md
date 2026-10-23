@@ -31,7 +31,7 @@ Support across various host harnesses is categorized by empirical verification l
 | Support Tier | Harness / Client | Status & Verification Basis | Notes & Boundaries |
 | :--- | :--- | :--- | :--- |
 | **Author-Verified** | **Codex** | Primary local development workflow | Verified in the author's daily workflow; does not constitute a cross-platform CI guarantee. |
-| **Documented / Reproducible Examples** | **Claude Code**, **Cursor**, **VS Code / GitHub Copilot**, **Windsurf Cascade**, **Continue** | Standard stdio configurations from vendor documentation or reproducible JSON/YAML patterns | *Not integration-tested in this repository CI.* Reflects public vendor specifications and native stdio execution capabilities. |
+| **Documented / Reproducible Examples** | **ChatGPT Web (Secure MCP Tunnel)**, **Claude Code**, **Cursor**, **VS Code / GitHub Copilot**, **Windsurf Cascade**, **Continue** | Standard stdio or tunnel configurations from vendor documentation or reproducible JSON/YAML/CLI patterns | *Not integration-tested in this repository CI.* Reflects public vendor specifications and native stdio execution capabilities. For ChatGPT Web tunnel setup, see [ChatGPT Secure MCP Tunnel Guide](chatgpt-secure-tunnel.md). |
 | **Cloud / Remote Hosts** | Web-hosted or cloud-hosted agent environments | Conditional (environment-dependent) | *No out-of-the-box guarantee.* Requires remote container to provide Node.js >= 22, OMP CLI in PATH, writable workspace, and process spawning permissions. |
 
 ---
@@ -63,7 +63,7 @@ For any MCP client that uses a standard JSON `mcpServers` configuration format, 
 ### 4.1 Codex Configuration
 
 - **Config Location**: `~/.codex/config.toml` (on Windows: `C:\Users\<username>\.codex\config.toml`).
-- **Official Documentation**: Codex author workflow and namespace setup are documented internally in this repository (see below).
+- **Official Documentation**: [Codex Config Reference](https://learn.chatgpt.com/docs/config-file/config-reference) and internal [Author Workflow](author-workflow.md#codex-direct-namespace-setup).
 
 #### Minimal Configuration
 
@@ -80,11 +80,11 @@ OMP_WORKER_OMP_COMMAND = "omp"
 
 *For local source builds, replace `command` with `"node"` and `args` with `["<path-to-repo>/dist/index.js"]`.*
 
-#### Direct Namespace Access & Selection Boundary
+#### Optional Code Mode Direct Namespace Access & Selection Boundary
 
-In Codex, registering the server connects the process, but direct tool namespace access is managed via `direct_only_tool_namespaces` in `~/.codex/config.toml`. Adding `"mcp__omp_worker"` enables friction-free tool invocation in Codex sessions.
+In Codex, registering `[mcp_servers.omp-worker]` is sufficient to make the tools available. If you enable Codex Code Mode and want `omp-worker` tools called directly without code-mode wrapping, set `features.code_mode.direct_only_tool_namespaces = ["mcp__omp_worker"]` in `~/.codex/config.toml` per the [official Codex Config Reference](https://learn.chatgpt.com/docs/config-file/config-reference) (legacy Codex builds used a top-level `direct_only_tool_namespaces` key).
 
-> **Important**: The `direct_only_tool_namespaces` setting is exclusive to Codex and is not used, supported, or required by any other host harness. Please consult the dedicated setup instructions in [Author Workflow: Codex Direct Namespace Setup](author-workflow.md#codex-direct-namespace-setup).
+> **Important**: This setting is an optional Codex Code Mode preference. It is not required for general MCP registration or tool selection, and it is not used by any other host harness. See [Author Workflow: Codex Direct Namespace Setup](author-workflow.md#codex-direct-namespace-setup) for current and legacy examples.
 
 - **Activation & Verification**: Save `config.toml` and restart Codex. You can run the [One-Time Verification Prompt](author-workflow.md#one-time-verification-prompt) to confirm the connection.
 - **Selection Policy**: Registering `omp-worker-mcp` makes tools available in Codex, but does not guarantee automatic selection for any given task. Guide delegation behavior with an `AGENTS.md` policy file.
@@ -265,14 +265,14 @@ mcpServers:
 
 For further details on host-specific MCP settings, tool approval flows, or client updates, refer to the official vendor documentation:
 
+- **Codex**: [Codex Config Reference](https://learn.chatgpt.com/docs/config-file/config-reference) · [Author Workflow: Codex Direct Namespace Setup](author-workflow.md#codex-direct-namespace-setup)
+- **ChatGPT Secure MCP Tunnel**: [OpenAI Secure MCP Tunnels Guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels) · [ChatGPT Secure MCP Tunnel Guide](chatgpt-secure-tunnel.md)
 - **Claude Code**: [Claude Code MCP Documentation](https://code.claude.com/docs/en/mcp)
 - **Cursor**: [Cursor MCP Documentation](https://docs.cursor.com/context/model-context-protocol)
 - **VS Code**: [Visual Studio Code MCP Documentation](https://code.visualstudio.com/docs/agent-customization/mcp-servers)
 - **GitHub Copilot / Agent Host**: [GitHub Copilot MCP Documentation](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)
 - **Windsurf Cascade**: [Windsurf MCP Documentation](https://docs.windsurf.com/windsurf/cascade/mcp)
 - **Continue**: [Continue MCP Documentation](https://docs.continue.dev/customize/deep-dives/mcp)
-- **Codex (Internal Guide)**: [Author Workflow: Codex Direct Namespace Setup](author-workflow.md#codex-direct-namespace-setup)
-
 ---
 
 ## 6. Next Steps: Enable the Selection Policy

@@ -19,27 +19,31 @@
 Enabling `omp-worker-mcp` involves three distinct, complementary layers:
 
 1. **Tool Availability (MCP Server Registration)**: Configuring `omp-worker-mcp` in your host harness (e.g., in `config.toml`, `mcp.json`, or via CLI) connects the server and exposes its tool declarations (`omp_run_compact`, `omp_run_batch_compact`, etc.) to the host LLM.
-2. **Direct Tool Namespace Access (Codex Environment Layer)**: In Codex specifically, registering an MCP server makes the tools present, but direct tool namespace access is controlled via `direct_only_tool_namespaces` in `~/.codex/config.toml`. Adding `"mcp__omp_worker"` to this setting allows the Codex environment to directly invoke tools under this namespace without friction. *Note: This setting is exclusive to Codex and is not used or required by other host harnesses.*
-3. **Selection Policy (Project & System Instructions)**: Making tools available and directly accessible does not guarantee *when* or *why* the host LLM will choose them over its built-in read/edit tools. Providing project-level instructions (such as `AGENTS.md` or `CLAUDE.md`) establishes clear delegation heuristics, guiding the host to reliably offload complex, multi-step execution tasks to background workers.
+2. **Direct Tool Namespace Access (Optional Codex Code Mode Preference)**: In Codex, registering an MCP server is sufficient to make its tools available. If you use Codex's Code Mode and want `omp-worker` tools called directly without code-mode wrapping, configure `features.code_mode.direct_only_tool_namespaces` in `~/.codex/config.toml` per the [official Codex Config Reference](https://learn.chatgpt.com/docs/config-file/config-reference) (older Codex releases used a top-level `direct_only_tool_namespaces` key). *Note: This setting is an optional Codex preference; it is not required to register MCP servers and is not used by other host harnesses.*
+3. **Selection Policy (Project & System Instructions)**: Making tools available does not guarantee *when* or *why* the host LLM will choose them over its built-in read/edit tools. Providing project-level instructions (such as `AGENTS.md` or `CLAUDE.md`) establishes clear delegation heuristics, guiding the host to reliably offload complex, multi-step execution tasks to background workers.
 
 > **Prerequisites**:
-> This tutorial assumes you have already installed Oh My Pi (OMP) and registered `omp-worker-mcp` with your host harness. If you have not done so yet, complete the [Installation & Quick Start](../README.md#installation-quick-start) and consult [Client Configurations](client-configurations.md) before proceeding.
+> This tutorial assumes you have already installed Oh My Pi (OMP) and registered `omp-worker-mcp` with your host harness. If you have not done so yet, complete the [Quick start](../README.md#quick-start) and consult [Client Configurations](client-configurations.md) before proceeding.
 
 ### Codex Direct Namespace Setup
 
-If you are using **Codex**, complete this quick setup step to enable direct tool namespace access:
+If you are using **Codex** with Code Mode and want direct tool calls for `omp-worker`, you can optionally add `"mcp__omp_worker"` to your `~/.codex/config.toml` (on Windows: `C:\Users\<username>\.codex\config.toml`):
 
-1. Open your user configuration file: `~/.codex/config.toml` (on Windows: `C:\Users\<username>\.codex\config.toml`).
-2. Locate (or add) the `direct_only_tool_namespaces` list.
-3. **Preserve existing entries**: Include `"mcp__omp_worker"` alongside any existing direct namespaces you may already have configured. Do not overwrite or drop your existing unrelated entries:
+1. **Current Codex CLI (per [official Config Reference](https://learn.chatgpt.com/docs/config-file/config-reference))** — merge into your existing `[features.code_mode]` table (do not create a duplicate `[features.code_mode]` header) and append `"mcp__omp_worker"` to `direct_only_tool_namespaces` while preserving any other list entries:
    ```toml
-   # Include mcp__omp_worker alongside existing entries
+   [features.code_mode]
+   # Merge into existing [features.code_mode] table and append mcp__omp_worker alongside existing entries
    direct_only_tool_namespaces = ["mcp__omp_worker"]
    ```
-4. Restart Codex for the configuration changes to take effect.
-5. (Optional) Run the [One-Time Verification Prompt](#one-time-verification-prompt) in Section 3 to confirm end-to-end functionality.
+2. **Legacy Codex builds (author's historical setup)** — older Codex versions read a top-level `direct_only_tool_namespaces` key placed above any `[table]` header:
+   ```toml
+   # Legacy top-level key for older Codex builds (keep above any [table] header)
+   direct_only_tool_namespaces = ["mcp__omp_worker"]
+   ```
+3. Restart Codex for the configuration changes to take effect.
+4. (Optional) Run the [One-Time Verification Prompt](#one-time-verification-prompt) in Section 3 to confirm end-to-end functionality.
 
-*(For other host harnesses such as Claude Code, Cursor, or VS Code, skip this step and proceed directly to Section 2 for policy placement.)*
+*(This step is optional in Codex and does not apply to other host harnesses such as Claude Code, Cursor, or VS Code — proceed directly to Section 2 for policy placement.)*
 
 ---
 

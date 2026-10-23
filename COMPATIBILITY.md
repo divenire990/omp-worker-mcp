@@ -70,10 +70,13 @@ Any changes to field semantics or required keys in this envelope are considered 
 ### 3. On-Disk State Storage Layout
 
 The directory structure and metadata files generated under the state root (`~/.codex/state/omp-worker` or custom configured path):
-- Task metadata (`meta.json`)
-- Group metadata (`group-meta.json`)
-- Standard output and error logs (`stdout.log`, `stderr.log`)
-- Result artifacts and cancellation tokens
+- Job metadata (`jobs/<job-id>/job.json`)
+- Group metadata (`groups/<group-id>/group.json`)
+- Per-attempt prompt files (`attempt-NN.prompt.md`)
+- Per-attempt standard output and error logs (`attempt-NN.stdout.jsonl`, `attempt-NN.stderr.log`)
+- Cancellation requests (`cancel.request.json`)
+
+See [docs/operations.md](docs/operations.md#2-on-disk-state-directory-layout) for the full layout.
 
 ---
 
@@ -97,7 +100,7 @@ To ensure smooth upgrades for downstream agents, workflows, and integrations:
 - Relies on native ECMAScript Modules (ESM), Node.js built-in test runner (`node:test`), and modern standard library APIs.
 
 ### Operating Systems
-- **Windows** (win32): Fully verified and supported in production and automated test suites.
-- **macOS** (Darwin / Apple Silicon): Verified with real OMP CLI end-to-end integration and automated CI quality gates.
-- **Linux** (x86_64, aarch64): Architectural design target; awaiting formal platform verification with upstream OMP CLI in production environments.
+- **Windows** (win32): Verified end-to-end with the real OMP CLI and automated CI test suites (`windows-latest`).
+- **macOS** (Darwin): Full automated test suite runs in CI (`macos-latest`, with a fake OMP binary); end-to-end verification with the real OMP CLI is pending.
+- **Linux** (x86_64, aarch64): Full automated test suite runs in CI (`ubuntu-latest`, with a fake OMP binary); end-to-end verification with the real OMP CLI is pending.
 - Requires a local `omp` executable available in the system `PATH` or configured explicitly via environment variables.

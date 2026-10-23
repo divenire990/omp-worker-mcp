@@ -19,27 +19,31 @@
 启用 `omp-worker-mcp` 包含三个清晰分工、层层递进的核心层级：
 
 1. **工具可用性（MCP 服务器注册）**：在宿主 Harness 中配置 `omp-worker-mcp`（例如通过 `config.toml`、`mcp.json` 或 CLI），连接并启动服务端进程，向宿主暴露其工具元数据声明（`omp_run_compact`、`omp_run_batch_compact` 等）。
-2. **直接工具命名空间访问（Codex 环境层）**：专属于 Codex 宿主环境，注册 MCP 服务仅将工具列入可用集，而直接工具命名空间访问由 `~/.codex/config.toml` 中的 `direct_only_tool_namespaces` 配置项控制。将 `"mcp__omp_worker"` 添加至此列表，可使 Codex 会话无障碍地直接调用该命名空间下的工具。*注：此配置项为 Codex 专属机制，其他宿主 Harness 不使用也不需要该配置。*
-3. **选择策略（项目级与系统指令）**：注册服务并开放直接命名空间访问使工具“可用且可直接调用”，但并不自动决定宿主 LLM *何时*与*为何*优先选择它而非内置的读写工具。通过提供项目级指令（如 `AGENTS.md` 或 `CLAUDE.md`），可以建立清晰的委派启发规则，引导宿主稳定地将复杂的多步骤执行任务下发给后台 Worker。
+2. **直接工具命名空间访问（Codex Code Mode 可选偏好项）**：在 Codex 中，仅注册 MCP 服务即可让工具处于可用状态。如果您启用了 Codex 的 Code Mode，并希望 `omp-worker` 工具跳过 code-mode 包装被直接调用，可按 [Codex 官方配置参考](https://learn.chatgpt.com/docs/config-file/config-reference) 在 `~/.codex/config.toml` 中设置 `features.code_mode.direct_only_tool_namespaces`（旧版 Codex 曾使用顶层 `direct_only_tool_namespaces` 键）。*注：此配置项仅是 Codex 的可选偏好项，并非注册或选用 MCP 服务的必要条件，其他宿主 Harness 也不使用该配置。*
+3. **选择策略（项目级与系统指令）**：注册服务使工具“可用”，但并不自动决定宿主 LLM *何时*与*为何*优先选择它而非内置的读写工具。通过提供项目级指令（如 `AGENTS.md` 或 `CLAUDE.md`），可以建立清晰的委派启发规则，引导宿主稳定地将复杂的多步骤执行任务下发给后台 Worker。
 
 > **前置条件**：
-> 本教程假设您已安装 Oh My Pi (OMP) 并完成了 `omp-worker-mcp` 在宿主 Harness 中的注册。如果您尚未完成这些步骤，请在继续之前查阅 [安装与快速开始](../README.zh-CN.md#安装与快速开始) 和 [客户端接入与配置指南](client-configurations.zh-CN.md)。
+> 本教程假设您已安装 Oh My Pi (OMP) 并完成了 `omp-worker-mcp` 在宿主 Harness 中的注册。如果您尚未完成这些步骤，请在继续之前查阅 [快速开始](../README.zh-CN.md#快速开始) 和 [客户端接入与配置指南](client-configurations.zh-CN.md)。
 
 ### Codex 专属直接命名空间配置
 
-如果您使用的是 **Codex**，请完成以下简明配置以启用直接工具命名空间访问：
+如果您使用的是 **Codex** 且希望在 Code Mode 下直接调用 `omp-worker` 工具，可在用户配置文件 `~/.codex/config.toml`（Windows 路径通常为 `C:\Users\<username>\.codex\config.toml`）中按需添加 `"mcp__omp_worker"`（请保留您已有的其他命名空间条目，切勿直接覆盖）：
 
-1. 打开用户配置文件：`~/.codex/config.toml`（Windows 路径通常为 `C:\Users\<username>\.codex\config.toml`）。
-2. 找到（或新建）`direct_only_tool_namespaces` 配置项。
-3. **保留现有命名空间**：请将 `"mcp__omp_worker"` 追加至现有列表中，同时保留您已配置的任何其他无关条目，切勿直接覆盖丢弃：
+1. **当前 Codex 版本（遵循 [官方配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)）**：合并进已有的 `[features.code_mode]` 表（切勿重复声明同名表头），并将 `"mcp__omp_worker"` 追加到 `direct_only_tool_namespaces` 列表中（保留已有的其他条目）：
    ```toml
-   # 保留现有命名空间配置并加入 mcp__omp_worker
+   [features.code_mode]
+   # 合并进已有的 [features.code_mode] 表，保留现有列表条目并追加 mcp__omp_worker
    direct_only_tool_namespaces = ["mcp__omp_worker"]
    ```
-4. 重启 Codex 使新配置生效。
-5. （可选）执行第 3 节中的 [一次性验证提示词](#一次性验证提示词) 验证端到端调用链路。
+2. **旧版 Codex 构建（作者早期配置示例）**：较早的 Codex 版本读取位于所有 `[表头]` 之前的顶层键 `direct_only_tool_namespaces`：
+   ```toml
+   # 仅适用于旧版 Codex 的顶层键写法（必须置于任何 [表头] 之前）
+   direct_only_tool_namespaces = ["mcp__omp_worker"]
+   ```
+3. 重启 Codex 使新配置生效。
+4. （可选）执行第 3 节中的 [一次性验证提示词](#一次性验证提示词) 验证端到端调用链路。
 
-*（如果您使用的是 Claude Code、Cursor 或 VS Code 等其他宿主 Harness，请跳过此步，直接前往第 2 节配置策略文件。）*
+*（该步骤在 Codex 中为可选项，且不适用于 Claude Code、Cursor 或 VS Code 等其他宿主 Harness——请直接前往第 2 节配置策略文件。）*
 
 ---
 

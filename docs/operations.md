@@ -22,7 +22,7 @@ All operational behavior can be configured via environment variables in the host
 | :--- | :--- | :--- |
 | `OMP_WORKER_OMP_COMMAND` | Path or executable name for the OMP CLI binary. | `omp` |
 | `OMP_WORKER_OMP_PREFIX_ARGS` | JSON array string of arguments prepended to OMP CLI invocations (e.g. `["--profile", "default"]`). | `[]` |
-| `OMP_WORKER_ALLOWED_ROOTS` | Optional non-empty JSON array of absolute directories that delegated job `cwd` values must resolve inside. Paths are canonicalized with `realpath`; sibling-prefix and symlink/junction escapes are rejected before OMP starts. Leave the variable completely unset for backward-compatible unrestricted cwd selection. If the variable is present but empty or malformed, execution fails closed. Strongly recommended for Secure MCP Tunnel or other remote exposure. | *(unset)* |
+| `OMP_WORKER_ALLOWED_ROOTS` | Optional non-empty JSON array of absolute directories that delegated job `cwd` values must resolve inside *(in unreleased `master` source — identify by commit SHA; published npm `0.1.1` predates this feature)*. Paths are canonicalized with `realpath`; sibling-prefix and symlink/junction escapes are rejected before OMP starts. Leave the variable completely unset for backward-compatible unrestricted cwd selection. If the variable is present but empty or malformed, execution fails closed. Strongly recommended for Secure MCP Tunnel or other remote exposure. | *(unset)* |
 | `OMP_WORKER_STATE_DIR` | Base directory for storing job states, prompt files, and execution logs. | `~/.codex/state/omp-worker` |
 | `OMP_WORKER_BROWSER_RULES` | Optional custom browser automation instructions injected into worker prompts. | *(none)* |
 | `OMP_WORKER_RETENTION_TTL_SECONDS` | Optional retention TTL in seconds for terminal job/group records. Unset disables TTL cleanup. | *(none)* |
@@ -41,11 +41,11 @@ All state records are stored under `OMP_WORKER_STATE_DIR` (defaults to `~/.codex
 ~/.codex/state/omp-worker/
 ├── jobs/
 │   └── job-<timestamp>-<hash>/
-│       ├── job.json              # Job metadata, parameters, and status
-│       ├── cancel.request.json   # Cancellation signal (if requested)
-│       ├── attempt-01.prompt.md  # Generated prompt for attempt 1
-│       ├── stdout.log            # Execution standard output
-│       └── stderr.log            # Execution standard error
+│       ├── job.json                  # Job metadata, parameters, and status
+│       ├── cancel.request.json       # Cancellation signal (if requested)
+│       ├── attempt-01.prompt.md      # Generated prompt for attempt 1
+│       ├── attempt-01.stdout.jsonl   # Attempt 1 standard output stream (JSONL events)
+│       └── attempt-01.stderr.log     # Attempt 1 standard error log
 └── groups/
     └── group-<timestamp>-<hash>/
         ├── group.json            # Batch DAG metadata, tasks, and status
@@ -60,7 +60,7 @@ To ensure stability across long-running developer machines and automated environ
 
 - **Conservative by Default**: By default, `omp-worker-mcp` **never automatically deletes completed or historical records**, preventing unexpected data loss.
 - **Explicit Cleanup Rules**: Users can opt in to automatic retention by setting `OMP_WORKER_RETENTION_TTL_SECONDS` (pruning terminal records older than N seconds) or `OMP_WORKER_RETENTION_MAX_BYTES` (pruning oldest terminal records when total disk usage exceeds threshold).
-- **Protection for Active Jobs**: Non-terminal records (`dispatched`, `running`, `pending`, `validating`, `cancelling`) are **strictly protected and never pruned**.
+- **Protection for Active Jobs**: Non-terminal records (`queued`, `running`, `cancelling`, and batch task statuses `pending`, `ready`) are **strictly protected and never pruned**.
 - **Corrupted Record Protection**: Any record that cannot be verified as terminal is preserved to prevent accidental deletion. Symbolic links within state directories are rejected and never traversed.
 - **Transparent Diagnostics**: Cleanup failures or permission issues are surfaced in structured error logs rather than silently ignored.
 
@@ -68,5 +68,5 @@ To ensure stability across long-running developer machines and automated environ
 
 ## 4. Server Restart & Crash Recovery
 
-- **Metadata Persistence**: Job and DAG group metadata are written atomically to disk. Dispatched and completed task records remain fully accessible across server restarts via `omp_result` and `omp_wait`.
+- **Metadata Persistence**: Job and DAG group metadata are written atomically to disk. Queued, running, and completed task records remain fully accessible across server restarts via `omp_result` and `omp_wait`.
 - **Process Decoupling**: If the MCP server restarts while an external worker process is executing, the server does not attempt unmanaged re-attachment to orphaned processes; the persisted state and captured logs accurately reflect the recorded state.

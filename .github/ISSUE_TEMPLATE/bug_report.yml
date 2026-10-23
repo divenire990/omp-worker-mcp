@@ -1,0 +1,89 @@
+name: Bug report / 问题报告
+description: Something doesn't work as documented. / 功能与文档描述不符。
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please **remove secrets, tokens and private paths** before submitting.
+        感谢反馈！提交前请**删除密钥、Token 和私人路径**。
+        Security issues → [SECURITY.md](https://github.com/divenire990/omp-worker-mcp/blob/master/SECURITY.md)
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened? / 发生了什么？
+      description: What did you expect, and what happened instead? / 你期望的结果与实际结果。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce / 复现步骤
+      description: The prompt or tool call you used, if possible. / 尽量附上使用的提示词或工具调用参数。
+      placeholder: |
+        1. Configure ...
+        2. Ask the agent to ...
+        3. omp_run_compact returns ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: omp-worker-mcp version
+      description: "`npx omp-worker-mcp --version`"
+    validations:
+      required: true
+  - type: input
+    id: omp-version
+    attributes:
+      label: OMP version
+      description: "`omp --version`"
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      description: "`node --version`"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system / 操作系统
+      options:
+        - Windows
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux
+        - Other / 其他
+    validations:
+      required: true
+  - type: dropdown
+    id: client
+    attributes:
+      label: MCP client / 客户端
+      options:
+        - Codex
+        - ChatGPT (Secure MCP Tunnel)
+        - Claude Code
+        - Cursor
+        - VS Code / GitHub Copilot
+        - Windsurf
+        - Continue
+        - Other / 其他
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: MCP configuration (redacted) / MCP 配置（已脱敏）
+      render: json
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / 日志
+      description: |
+        Relevant lines from `attempt-NN.stderr.log` / `attempt-NN.stdout.jsonl` in `<state dir>/jobs/<job-id>/` (default state dir: `~/.codex/state/omp-worker`).
+        相关的 `attempt-NN.stderr.log` / `attempt-NN.stdout.jsonl` 片段，位于 `<状态目录>/jobs/<job-id>/`。
+      render: text

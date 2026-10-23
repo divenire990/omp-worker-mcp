@@ -22,7 +22,7 @@
 | :--- | :--- | :--- |
 | `OMP_WORKER_OMP_COMMAND` | OMP CLI 二进制文件的路径或可执行文件名。 | `omp` |
 | `OMP_WORKER_OMP_PREFIX_ARGS` | 每次调用 OMP CLI 时前置添加的参数（JSON 数组字符串，例如 `["--profile", "default"]`）。 | `[]` |
-| `OMP_WORKER_ALLOWED_ROOTS` | 可选：非空 JSON 数组，元素必须是绝对目录。所有委托任务的 `cwd` 在 `realpath` 规范化后必须位于其中某个根目录内；会在启动 OMP 前拒绝同前缀兄弟目录以及 symlink / junction 逃逸。若完全不设置该变量，则保持向后兼容、不限制 cwd；若显式设置为空值或非法格式，则执行将 fail closed。通过 Secure MCP Tunnel 或其他远程方式暴露 MCP 时强烈建议配置。 | *(未设置)* |
+| `OMP_WORKER_ALLOWED_ROOTS` | 可选：非空 JSON 数组，元素必须是绝对目录*（位于尚未发布至 npm 的 `master` 源码中，请通过 commit SHA 标识；已发布的 npm `0.1.1` 早于该特性）*。所有委托任务的 `cwd` 在 `realpath` 规范化后必须位于其中某个根目录内；会在启动 OMP 前拒绝同前缀兄弟目录以及 symlink / junction 逃逸。若完全不设置该变量，则保持向后兼容、不限制 cwd；若显式设置为空值或非法格式，则执行将 fail closed。通过 Secure MCP Tunnel 或其他远程方式暴露 MCP 时强烈建议配置。 | *(未设置)* |
 | `OMP_WORKER_STATE_DIR` | 用于保存任务状态、尝试记录、日志与产物的根目录路径。 | `~/.codex/state/omp-worker` |
 | `OMP_WORKER_BROWSER_RULES` | 可选：注入到任务提示词中的自定义浏览器自动化指令。 | *(无)* |
 | `OMP_WORKER_RETENTION_TTL_SECONDS` | 可选：终态任务/任务组的保留时间（秒）。未设置时不基于时间自动清理。 | *(无)* |
@@ -41,11 +41,11 @@
 ~/.codex/state/omp-worker/
 ├── jobs/
 │   └── job-<时间戳>-<哈希>/
-│       ├── job.json              # 任务元数据、参数与当前状态
-│       ├── cancel.request.json   # 取消信号文件（若已发起取消）
-│       ├── attempt-01.prompt.md  # 第 1 次尝试生成的提示词
-│       ├── stdout.log            # 任务执行标准输出
-│       └── stderr.log            # 任务执行标准错误
+│       ├── job.json                  # 任务元数据、参数与当前状态
+│       ├── cancel.request.json       # 取消信号文件（若已发起取消）
+│       ├── attempt-01.prompt.md      # 第 1 次尝试生成的提示词
+│       ├── attempt-01.stdout.jsonl   # 第 1 次尝试的标准输出流（JSONL 事件）
+│       └── attempt-01.stderr.log     # 第 1 次尝试的标准错误日志
 └── groups/
     └── group-<时间戳>-<哈希>/
         ├── group.json            # 批量 DAG 任务组元数据、任务列表与状态
@@ -60,7 +60,7 @@
 
 - **默认保守保留**：默认情况下，`omp-worker-mcp` **绝不自动删除任何已完成或历史记录**，防止用户数据或日志意外丢失。
 - **显式清理规则**：用户可通过配置 `OMP_WORKER_RETENTION_TTL_SECONDS`（清理超过指定秒数的终态记录）或 `OMP_WORKER_RETENTION_MAX_BYTES`（按时间由旧到新清理终态记录直至满足字节上限）启用自动清理。
-- **运行中任务保护**：处于非终态（`dispatched`、`running`、`pending`、`validating`、`cancelling` 等）的任务与任务组**受到严格保护，绝不被清理**。
+- **运行中任务保护**：处于非终态（`queued`、`running`、`cancelling` 以及批量子任务状态 `pending`、`ready`）的任务与任务组**受到严格保护，绝不被清理**。
 - **损坏记录安全保护**：无法确认其是否为终态的损坏文件不会被误删；状态目录中的符号链接将被拒绝且不会被递归跟随。
 - **透明的故障可见性**：清理过程中的权限异常或读写错误会完整记录在错误输出中，不会被静默吞掉。
 
@@ -68,5 +68,5 @@
 
 ## 4. 服务器重启与恢复机制
 
-- **元数据持久化**：任务与批处理组的元数据均原子写入磁盘。在 MCP 服务器重启后，所有已分发与已完成的任务依然可以通过 `omp_result` 与 `omp_wait` 完整读取。
+- **元数据持久化**：任务与批处理组的元数据均原子写入磁盘。在 MCP 服务器重启后，所有已入队、运行中与已完成的任务依然可以通过 `omp_result` 与 `omp_wait` 完整读取。
 - **进程解耦**：若 MCP 服务器在外部任务运行期间意外退出，服务器不会在重启后对失控的孤儿进程进行静默接管，持久化的元数据与日志将忠实反映记录的状态。

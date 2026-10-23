@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420" role="img" aria-label="omp-worker-mcp architecture">
+<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker>
+  <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker>
+</defs>
+<style>
+  .s { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif; }
+  .m { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; }
+</style>
+<rect x="1" y="1" width="898" height="418" rx="16" fill="#0d1117" stroke="#30363d" stroke-width="2"/>
+
+<text class="s" x="145" y="58" text-anchor="middle" font-size="12" font-weight="600" letter-spacing="1.5" fill="#8b949e">PLANS &amp; REVIEWS</text>
+<text class="s" x="450" y="58" text-anchor="middle" font-size="12" font-weight="600" letter-spacing="1.5" fill="#8b949e">ORCHESTRATES</text>
+<text class="s" x="742" y="58" text-anchor="middle" font-size="12" font-weight="600" letter-spacing="1.5" fill="#8b949e">DOES THE WORK</text>
+<rect x="30" y="80" width="230" height="200" rx="12" fill="#161b22" stroke="#58a6ff" stroke-width="2"/>
+<text class="s" x="50" y="116" font-size="19" font-weight="700" fill="#e6edf3">Supervisor agent</text>
+<text class="s" x="50" y="138" font-size="10.5" fill="#8b949e">ChatGPT · Codex · Claude Code · Cursor</text>
+<circle cx="56" cy="175" r="3.5" fill="#58a6ff"/><text class="s" x="68" y="180" font-size="14" fill="#c9d1d9">Plans and splits the work</text>
+<circle cx="56" cy="205" r="3.5" fill="#58a6ff"/><text class="s" x="68" y="210" font-size="14" fill="#c9d1d9">Writes acceptance criteria</text>
+<circle cx="56" cy="235" r="3.5" fill="#58a6ff"/><text class="s" x="68" y="240" font-size="14" fill="#c9d1d9">Reviews, accepts or corrects</text>
+<rect x="335" y="80" width="230" height="200" rx="12" fill="#161b22" stroke="#a371f7" stroke-width="2"/>
+<text class="m" x="355" y="116" font-size="18" font-weight="700" fill="#e6edf3">omp-worker-mcp</text>
+<text class="s" x="355" y="138" font-size="12" fill="#8b949e">MCP server (stdio)</text>
+<circle cx="361" cy="175" r="3.5" fill="#a371f7"/><text class="s" x="373" y="180" font-size="14" fill="#c9d1d9">Checks DAG &amp; write scopes</text>
+<circle cx="361" cy="205" r="3.5" fill="#a371f7"/><text class="s" x="373" y="210" font-size="14" fill="#c9d1d9">Runs jobs in the background</text>
+<circle cx="361" cy="235" r="3.5" fill="#a371f7"/><text class="s" x="373" y="240" font-size="14" fill="#c9d1d9">Keeps state, logs, results</text>
+<line x1="262" y1="180" x2="331" y2="180" stroke="#8b949e" stroke-width="2" marker-end="url(#ah)"/>
+<text class="s" x="297" y="170" text-anchor="middle" font-size="12" fill="#8b949e">delegate</text>
+<rect x="630" y="80" width="225" height="52" rx="12" fill="#161b22" stroke="#3fb950" stroke-width="2"/>
+<text class="s" x="645" y="102" font-size="14" font-weight="700" fill="#e6edf3">OMP worker · api</text>
+<text class="m" x="645" y="121" font-size="11" fill="#8b949e">write: src/api/</text>
+<path d="M567,180 C600,180 605,106 626,106" fill="none" stroke="#8b949e" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="630" y="154" width="225" height="52" rx="12" fill="#161b22" stroke="#3fb950" stroke-width="2"/>
+<text class="s" x="645" y="176" font-size="14" font-weight="700" fill="#e6edf3">OMP worker · ui</text>
+<text class="m" x="645" y="195" font-size="11" fill="#8b949e">write: src/ui/</text>
+<path d="M567,180 C600,180 605,180 626,180" fill="none" stroke="#8b949e" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="630" y="228" width="225" height="52" rx="12" fill="#161b22" stroke="#3fb950" stroke-width="2"/>
+<text class="s" x="645" y="250" font-size="14" font-weight="700" fill="#e6edf3">OMP worker · tests</text>
+<text class="m" x="645" y="269" font-size="11" fill="#8b949e">after api + ui · write: tests/</text>
+<path d="M567,180 C600,180 605,254 626,254" fill="none" stroke="#8b949e" stroke-width="2" marker-end="url(#ah)"/>
+<path d="M857,106 C882,106 882,254 859,254" fill="none" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#ahg)"/>
+<path d="M857,180 C872,180 872,246 862,250" fill="none" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="4 4"/>
+<path d="M742,282 L742,330 L145,330 L145,286" fill="none" stroke="#3fb950" stroke-width="2" marker-end="url(#ahg)"/>
+<rect x="160" y="317" width="580" height="26" rx="6" fill="#0d1117"/>
+<text class="m" x="450" y="335" text-anchor="middle" font-size="12.5" fill="#3fb950">OMP_WORKER_RESULT { status, summary, artifacts, verification, remaining }</text>
+<text class="s" x="450" y="382" text-anchor="middle" font-size="13" fill="#8b949e">Not done yet?  omp_continue sends feedback to the same OMP session</text>
+</svg>

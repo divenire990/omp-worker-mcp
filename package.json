@@ -3,7 +3,7 @@
   "version": "0.1.1",
   "mcpName": "io.github.divenire990/omp-worker-mcp",
   "type": "module",
-  "description": "Delegate complete coding tasks to the local OMP default model and inspect the result.",
+  "description": "MCP server that lets ChatGPT, Codex, Claude Code and other agents hand off coding tasks and DAG batches to local Oh My Pi (OMP) workers.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -23,14 +23,19 @@
   },
   "keywords": [
     "mcp",
+    "mcp-server",
     "model-context-protocol",
     "omp",
     "oh-my-pi",
     "coding-agent",
     "subagent",
+    "supervisor-worker",
     "task-delegation",
     "dag-orchestrator",
-    "async-worker"
+    "async-worker",
+    "codex",
+    "chatgpt",
+    "claude-code"
   ],
   "files": [
     "dist",

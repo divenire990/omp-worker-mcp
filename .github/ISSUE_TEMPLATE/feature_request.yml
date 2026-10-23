@@ -1,0 +1,25 @@
+name: Feature request / 功能建议
+description: Suggest an improvement or a new capability. / 提出改进或新功能。
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do? / 你想完成什么？
+      description: Describe the workflow or problem, not just the solution. / 描述场景或问题，而不只是方案。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution / 建议的方案
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / 考虑过的其他方案
+  - type: checkboxes
+    id: contract
+    attributes:
+      label: Contract impact / 契约影响
+      options:
+        - label: This would change a tool name, input schema, response payload, the OMP_WORKER_RESULT envelope or the on-disk layout (see COMPATIBILITY.md). / 会改动 COMPATIBILITY.md 中定义的公共契约。

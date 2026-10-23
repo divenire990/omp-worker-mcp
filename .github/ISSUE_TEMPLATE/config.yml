@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability / 安全漏洞
+    url: https://github.com/divenire990/omp-worker-mcp/security/advisories/new
+    about: Please report security issues privately. / 请私下报告安全问题。
+  - name: Documentation / 文档
+    url: https://github.com/divenire990/omp-worker-mcp/tree/master/docs
+    about: Setup guides, client configurations and the tool reference. / 安装指南、客户端配置与工具参考。

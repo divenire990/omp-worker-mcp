@@ -42,9 +42,21 @@ OpenAI `tunnel-client` can launch a local stdio MCP child process through `--mcp
 
 ---
 
-## 2. Security configuration before remote access
+## 2. Version boundary & security configuration before remote access
 
-For remote exposure, strongly consider setting `OMP_WORKER_ALLOWED_ROOTS`. It is a non-empty JSON array of absolute directory paths.
+> **Important — unreleased `master` source (identify by commit SHA) vs. published npm `0.1.1`:**
+> `OMP_WORKER_ALLOWED_ROOTS` is in unreleased `master` source (identify by commit SHA; `package.json` and the CLI still report `0.1.1`); published npm `0.1.1` predates this feature. Running `npx -y omp-worker-mcp` while `0.1.1` is latest on npm will **not** enforce `OMP_WORKER_ALLOWED_ROOTS`.
+>
+> Build from unreleased `master` source when exposing `omp-worker-mcp` through a tunnel:
+> ```bash
+> git clone https://github.com/divenire990/omp-worker-mcp.git
+> cd omp-worker-mcp
+> npm ci
+> npm run build
+> ```
+> Then pass `node <absolute-path-to-repo>/dist/index.js` to `--mcp-command` below. (Once a release containing this commit is published to npm, `"npx -y omp-worker-mcp"` can be used directly.)
+
+For remote exposure, always set `OMP_WORKER_ALLOWED_ROOTS`. It is a non-empty JSON array of absolute directory paths.
 
 ### Windows PowerShell
 
@@ -60,7 +72,7 @@ export OMP_WORKER_OMP_COMMAND=omp
 export OMP_WORKER_ALLOWED_ROOTS='["/Users/alice/Projects","/Users/alice/Research"]'
 ```
 
-When enabled, the worker checks immediately before spawning OMP that:
+When enabled on an unreleased `master` source build, the worker checks immediately before spawning OMP that:
 
 1. `cwd` is an existing absolute directory;
 2. `cwd` and configured roots are canonicalized through `realpath`;
@@ -72,62 +84,85 @@ When enabled, the worker checks immediately before spawning OMP that:
 
 ---
 
-## 3. Connect the local stdio MCP to Secure MCP Tunnel
+## 3. Prerequisites & OpenAI access requirements
 
-The OpenAI `tunnel-client` can manage a long-lived local stdio MCP runtime directly. The example below assumes you already have a tunnel ID and runtime API key.
+Per OpenAI's [Secure MCP Tunnels guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels) and `tunnel-client help quickstart`, you need:
 
-Keep the runtime key in an environment variable rather than embedding it in command history or config files:
+1. **Organization / Workspace access**: Your OpenAI organization and ChatGPT workspace must have Secure MCP Tunnels and custom MCP connectors enabled (`https://platform.openai.com/settings/organization/tunnels` and `https://chatgpt.com/#settings/Connectors`).
+2. **Tunnel ID (`CONTROL_PLANE_TUNNEL_ID`)**: Created in Tunnels management or via `tunnel-client admin tunnels create` (which requires `OPENAI_ADMIN_KEY` with **Tunnels Read + Manage** permission).
+3. **Runtime API key (`CONTROL_PLANE_API_KEY`)**: Created in [Runtime API keys](https://platform.openai.com/settings/organization/api-keys) by a principal with **Tunnels Read + Use** permission for the tunnel. Do **not** pass `OPENAI_ADMIN_KEY` to the long-lived tunnel daemon.
+
+---
+
+## 4. Connect the local stdio MCP to Secure MCP Tunnel
+
+Keep the runtime API key in `CONTROL_PLANE_API_KEY` rather than embedding it in command history or config files.
+
+### Standard profile workflow (`init` → `doctor` → `run`)
+
+This matches the official OpenAI Secure MCP Tunnels documentation and `tunnel-client help quickstart`:
+
+#### Windows PowerShell
 
 ```powershell
-$env:TUNNEL_RUNTIME_KEY = "<runtime-api-key>"
-```
+$env:CONTROL_PLANE_API_KEY = "<runtime-api-key>"
 
-Connect the local MCP server:
-
-```powershell
-tunnel-client runtimes connect `
-  --alias omp-worker `
+tunnel-client init `
+  --sample sample_mcp_stdio_local `
+  --profile omp-worker `
   --tunnel-id tunnel_0123456789abcdef0123456789abcdef `
-  --runtime-api-key env:TUNNEL_RUNTIME_KEY `
-  --mcp-command "npx -y omp-worker-mcp"
+  --mcp-command "node D:\path\to\omp-worker-mcp\dist\index.js"
+
+tunnel-client doctor --profile omp-worker --explain
+tunnel-client run --profile omp-worker
 ```
 
-macOS / Linux:
+#### macOS / Linux
 
 ```bash
-export TUNNEL_RUNTIME_KEY='<runtime-api-key>'
+export CONTROL_PLANE_API_KEY='<runtime-api-key>'
 
+tunnel-client init \
+  --sample sample_mcp_stdio_local \
+  --profile omp-worker \
+  --tunnel-id tunnel_0123456789abcdef0123456789abcdef \
+  --mcp-command "node /abs/path/to/omp-worker-mcp/dist/index.js"
+
+tunnel-client doctor --profile omp-worker --explain
+tunnel-client run --profile omp-worker
+```
+
+### Optional: managed local runtime supervision (`runtimes connect`)
+
+If you want `tunnel-client` (or Codex) to supervise a background local runtime alias instead of keeping `tunnel-client run` attached to a terminal, the CLI also supports:
+
+```bash
 tunnel-client runtimes connect \
   --alias omp-worker \
   --tunnel-id tunnel_0123456789abcdef0123456789abcdef \
-  --runtime-api-key env:TUNNEL_RUNTIME_KEY \
-  --mcp-command "npx -y omp-worker-mcp"
+  --runtime-api-key env:CONTROL_PLANE_API_KEY \
+  --mcp-command "node /abs/path/to/omp-worker-mcp/dist/index.js"
 ```
 
-The stdio process launched by `tunnel-client` inherits its runtime environment, so `OMP_WORKER_OMP_COMMAND` and `OMP_WORKER_ALLOWED_ROOTS` are inherited by `omp-worker-mcp` and its runners.
+The stdio process launched by `tunnel-client` inherits its runtime environment, so `OMP_WORKER_OMP_COMMAND` and `OMP_WORKER_ALLOWED_ROOTS` are inherited by `omp-worker-mcp` and its detached runners.
 
 ---
 
-## 4. Verify the runtime
+## 5. Verify the runtime
 
-Do not treat a successful launch command as sufficient verification. Check the managed runtime:
+Do not treat a launch command alone as sufficient verification:
 
-```bash
-tunnel-client runtimes status omp-worker --json
-```
+- **Foreground `tunnel-client run`**: Probe the local operator endpoints (`http://127.0.0.1:8080/healthz`, `/readyz`, and `/ui` by default, or use `tunnel-client health`).
+- **Managed `runtimes connect`**: Check the runtime status:
+  ```bash
+  tunnel-client runtimes status omp-worker --json
+  ```
+  Confirm that `process_running`, `healthy`, and `ready` are true.
 
-Verify that the process is running, local health/readiness is healthy, and the ChatGPT workspace has permission to use the corresponding tunnel / MCP app.
-
-Useful diagnostics:
-
-```bash
-tunnel-client runtimes status omp-worker
-tunnel-client doctor --profile <profile> --explain
-```
-
+Keep `tunnel-client` running when you create or verify the connector in ChatGPT settings (`https://chatgpt.com/#settings/Connectors`) and during every MCP call from ChatGPT.
 ---
 
-## 5. Recommended ChatGPT supervision model
+## 6. Recommended ChatGPT supervision model
 
 Keep responsibilities separated:
 
@@ -151,7 +186,7 @@ Prefer `omp_run_compact` for one task, `omp_run_batch_compact` for multiple para
 
 ---
 
-## 6. First verification task
+## 7. First verification task
 
 Start with a read-only task:
 
@@ -163,7 +198,7 @@ Then verify the negative path: if only `D:\Projects` is allowed, a job whose `cw
 
 ---
 
-## 7. Trust boundary
+## 8. Trust boundary
 
 Secure MCP Tunnel solves network reachability and transport; it does not automatically sandbox the local execution environment. A complete boundary should combine:
 

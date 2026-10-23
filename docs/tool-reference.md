@@ -20,8 +20,8 @@
 | :--- | :--- | :--- |
 | `omp_run_compact` | **High-Level** *(Recommended)* | **Recommended entrypoint for single-task delegation**. Spawns a background OMP worker and blocks up to `wait_seconds` (default: 60s) in a single turn, returning a compact execution summary. |
 | `omp_delegate` | **Low-Level** | Dispatches an asynchronous background task without blocking, immediately returning a unique `job_id` for decoupled tracking. |
-| `omp_wait` | **Low-Level** | Polls or waits for a running job until it reaches a terminal status or until `timeout_seconds` elapses. |
-| `omp_result` | **Inspection** | Retrieves detailed attempt history, stdout/stderr logs, modified file artifacts, and the parsed structured outcome envelope for a specified `job_id`. |
+| `omp_wait` | **Low-Level** | Polls or waits for a running job until it reaches a terminal status or until `wait_seconds` (1–60s, default: 30s) elapses. |
+| `omp_result` | **Inspection** | Retrieves detailed attempt history, per-attempt log paths (`attempt-NN.stdout.jsonl`, `attempt-NN.stderr.log`), modified file artifacts, and the parsed structured outcome envelope for a specified `job_id`. |
 | `omp_continue` | **Supervision** | Injects supervisory guidance (`feedback`) into a failed, blocked, or incomplete task to trigger a new attempt within the same session without losing prior context. |
 | `omp_cancel` | **Control** | Sends a cancellation request to a running job and gracefully terminates the spawned worker process tree. |
 
@@ -39,7 +39,7 @@
 
 ## 3. Task Safety & Ownership Contract
 
-To ensure predictable and collision-free agent execution, `omp-worker-mcp` enforces a three-part safety contract:
+To ensure predictable and ownership-validated agent execution, `omp-worker-mcp` enforces a three-part safety contract:
 
 ### 1. Write vs. Read-Only Boundaries
 - **Batch Task Items (`omp_run_batch_compact`)**: Task items in a batch DAG declare `access` (`write` vs. `read_only`). `write` task items must explicitly declare the workspace file paths or directories they intend to modify via the `ownership` parameter; declared boundaries are supplied as worker constraints. `read_only` task items declare no write scope, and read-only constraints are supplied to the worker prompt.
