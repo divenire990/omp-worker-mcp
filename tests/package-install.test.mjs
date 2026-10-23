@@ -94,6 +94,10 @@ test("package.json metadata satisfies publishing and Node >=22 constraints", asy
   assert.equal(pkg.name, "omp-worker-mcp");
   assert.equal(pkg.type, "module");
   assert.ok(pkg.version, "version should be defined");
+  const lockContent = await readFile(path.join(projectRoot, "package-lock.json"), "utf8");
+  const lock = JSON.parse(lockContent);
+  assert.equal(lock.version, pkg.version, "package-lock.json root version must match package.json");
+  assert.equal(lock.packages?.[""]?.version, pkg.version, "package-lock.json packages[''] version must match package.json");
   assert.equal(pkg.license, "MIT");
   assert.ok(pkg.repository && pkg.repository.url, "repository url should be defined");
   assert.ok(!pkg.repository.url.includes("undefined"), "repository url should be valid");
@@ -165,10 +169,12 @@ test("npm pack, install into isolated directory, and execute bin entry", async (
       const { stdout: helpShortOut } = await execFileAsync(process.execPath, [binScriptPath, "-h"]);
       assert.ok(helpShortOut.includes("Usage:"), "help output should include usage");
 
-      // 5. Test bin --version
+      // 5. Test bin --version and -v match package.json version exactly
+      const pkg = JSON.parse(await readFile(path.join(projectRoot, "package.json"), "utf8"));
       const { stdout: versionOut } = await execFileAsync(process.execPath, [binScriptPath, "--version"]);
-      assert.ok(/^\d+\.\d+\.\d+/.test(versionOut.trim()), `version output should be semver, got: ${versionOut.trim()}`);
-
+      assert.equal(versionOut.trim(), pkg.version, `installed bin --version must match package.json (${pkg.version})`);
+      const { stdout: versionShortOut } = await execFileAsync(process.execPath, [binScriptPath, "-v"]);
+      assert.equal(versionShortOut.trim(), pkg.version, `installed bin -v must match package.json (${pkg.version})`);
       // 6. Test running MCP server via installed bin using stdio transport
       const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-worker-installed-state-"));
       const transport = new StdioClientTransport({
@@ -186,6 +192,10 @@ test("npm pack, install into isolated directory, and execute bin entry", async (
       await client.connect(transport);
 
       try {
+        assert.deepEqual(client.getServerVersion(), {
+          name: "omp-worker",
+          version: pkg.version,
+        });
         const { tools } = await client.listTools();
         const toolNames = tools.map((t) => t.name);
         assert.ok(toolNames.includes("omp_delegate"), "installed MCP server should expose omp_delegate");

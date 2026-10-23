@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-import { readFile } from "node:fs/promises";
+import { PACKAGE_VERSION } from "../dist/version.js";
 
 const args = process.argv.slice(2);
 
@@ -20,13 +18,7 @@ By default, runs the MCP server over stdio for integration with MCP clients.`);
 }
 
 if (args.includes("--version") || args.includes("-v")) {
-  try {
-    const packageJsonPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "package.json");
-    const pkg = JSON.parse(await readFile(packageJsonPath, "utf8"));
-    console.log(pkg.version || "1.0.0");
-  } catch {
-    console.log("1.0.0");
-  }
+  console.log(PACKAGE_VERSION);
   process.exit(0);
 }
 

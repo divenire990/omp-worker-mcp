@@ -66,6 +66,11 @@ test("MCP exposes all nine tools including omp_run_batch_compact, omp_wait_group
   const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-worker-mcp-test-"));
   const { client } = await createTestClient(stateRoot);
   try {
+    const pkg = JSON.parse(await readFile(path.join(projectRoot, "package.json"), "utf8"));
+    assert.deepEqual(client.getServerVersion(), {
+      name: "omp-worker",
+      version: pkg.version,
+    });
     const { tools } = await client.listTools();
     const names = tools.map((tool) => tool.name);
     assert.deepEqual(names.sort(), [

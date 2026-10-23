@@ -39,6 +39,7 @@ import {
   type JobRecord,
   type StateCleanupResult,
 } from "./types.js";
+import { PACKAGE_VERSION } from "./version.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const runnerPath = path.join(__dirname, "runner.js");
@@ -488,7 +489,7 @@ export function validateDAGAndOwnership(tasks: BatchTaskInput[], cwd: string): v
 }
 
 const server = new McpServer(
-  { name: "omp-worker", version: "1.0.0" },
+  { name: "omp-worker", version: PACKAGE_VERSION },
   {
     instructions:
       "Use OMP Boss Mode by default for substantive tasks that require tool-driven investigation, implementation, workspace or environment changes, or other multi-step execution. Ordinary conversation, direct explanations, status questions, and answers that need no task execution remain with Codex; the user may also explicitly ask Codex to work directly. In Boss Mode, first perform bounded, risk-proportionate, read-only exploration of the goal and local context. Stop as soon as the evidence is decision-ready, tell the user the concise findings and proposed direction, and call omp_run_compact by default for single tasks or omp_run_batch_compact for multiple independent tasks. If omp_run_compact or omp_run_batch_compact returns a terminal compact result, perform decisive acceptance checks without requesting unnecessary full reports.",
