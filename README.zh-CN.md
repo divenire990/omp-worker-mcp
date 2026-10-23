@@ -43,7 +43,7 @@
 - **结果可审查**：每个 Worker 都以 `OMP_WORKER_RESULT` 收尾：状态、摘要、改了哪些文件、验证证据、遗留事项。
 - **返工不用从头来**：`omp_continue` 把反馈发回**同一个** OMP 会话，Worker 保留之前的上下文。
 - **任务记录持久化**：任务元数据、日志和结果都存在磁盘上，MCP 服务器重启后依然可以查询。
-- **网页版 ChatGPT 也能用**：通过 OpenAI Secure MCP Tunnel 连接，本机不开放入站端口，并可通过 `OMP_WORKER_ALLOWED_ROOTS` 限制任务只能在指定目录中运行（该特性位于尚未发布至 npm 的 `master` 源码中，请通过 commit SHA 标识；已发布的 npm `0.1.1` 早于该特性）。
+- **网页版 ChatGPT 也能用**：通过 OpenAI Secure MCP Tunnel 连接，本机不开放入站端口，并可通过 `OMP_WORKER_ALLOWED_ROOTS` 限制任务只能在指定目录中运行（自 `0.2.0` 起提供；历史版本 npm `0.1.1` 不具备该特性）。
 
 ## 适合什么场景
 
@@ -109,26 +109,26 @@ direct_only_tool_namespaces = ["mcp__omp_worker"]
 <details>
 <summary><b>ChatGPT（网页版）</b>：通过 Secure MCP Tunnel</summary>
 
-> **版本边界提示（未发布的 `master` 源码 vs. npm `0.1.1`）：** `OMP_WORKER_ALLOWED_ROOTS` 位于尚未发布至 npm 的 `master` 源码中（请通过 commit SHA 标识源码版本，其 `package.json` 与 CLI 仍显示 `0.1.1`）；已发布的 npm `0.1.1` 早于该特性。远程暴露本机执行能力前，请从 `master` 源码构建并将 `--mcp-command` 指向 `node <仓库路径>/dist/index.js`。
+> **版本要求（`>= 0.2.0`）：** `OMP_WORKER_ALLOWED_ROOTS` 自 `omp-worker-mcp` `0.2.0` 起提供（历史版本 npm `0.1.1` 不具备该特性，不会执行 `OMP_WORKER_ALLOWED_ROOTS` 目录白名单检查）。远程暴露本机执行能力前，请确认 `npx -y omp-worker-mcp@latest --version` 返回 `0.2.0` 或更高版本。
 
 在本机通过 OpenAI 的 `tunnel-client` 运行服务器，你的电脑只发起出站连接。
 
 ```bash
 export OMP_WORKER_OMP_COMMAND=omp
-export OMP_WORKER_ALLOWED_ROOTS='["/Users/you/Projects"]'   # 远程访问时强烈建议设置（位于未发布的 master 源码；npm 0.1.1 早于该特性）
+export OMP_WORKER_ALLOWED_ROOTS='["/Users/you/Projects"]'   # 远程访问时强烈建议设置（自 0.2.0 起提供；0.1.1 不具备该特性）
 export CONTROL_PLANE_API_KEY='<runtime-api-key>'
 
 tunnel-client init \
   --sample sample_mcp_stdio_local \
   --profile omp-worker \
   --tunnel-id <your-tunnel-id> \
-  --mcp-command "node /abs/path/to/omp-worker-mcp/dist/index.js"
+  --mcp-command "npx -y omp-worker-mcp"
 
 tunnel-client doctor --profile omp-worker --explain
 tunnel-client run --profile omp-worker
 ```
 
-Windows PowerShell 写法、源码构建步骤、`tunnel-client runtimes connect` 托管模式、权限要求和完整信任边界见 [ChatGPT Secure MCP Tunnel 指南](docs/chatgpt-secure-tunnel.zh-CN.md)。
+Windows PowerShell 写法、`0.1.1` 升级与本地构建说明、`tunnel-client runtimes connect` 托管模式、权限要求和完整信任边界见 [ChatGPT Secure MCP Tunnel 指南](docs/chatgpt-secure-tunnel.zh-CN.md)。
 </details>
 
 <details>
@@ -303,7 +303,7 @@ graph LR
 | 变量 | 默认值 | 用途 |
 | :--- | :--- | :--- |
 | `OMP_WORKER_OMP_COMMAND` | `omp` | OMP 可执行文件名或完整路径 |
-| `OMP_WORKER_ALLOWED_ROOTS` | *（不设置 = 不限制）* | 绝对路径组成的 JSON 数组，任务只能在这些目录内运行。**任何远程使用都应设置。** *（位于尚未发布至 npm 的 `master` 源码中，请通过 commit SHA 标识；已发布的 npm `0.1.1` 早于该特性。）* |
+| `OMP_WORKER_ALLOWED_ROOTS` | *（不设置 = 不限制）* | 绝对路径组成的 JSON 数组，任务只能在这些目录内运行。**任何远程使用都应设置。** *（自 `0.2.0` 起提供；npm `0.1.1` 不具备该特性。）* |
 | `OMP_WORKER_STATE_DIR` | `~/.codex/state/omp-worker` | 任务状态、提示词和日志的存放位置（即使不用 Codex 也默认放在这里） |
 | `OMP_WORKER_RETENTION_TTL_SECONDS` | *（不设置 = 永久保留）* | 删除超过 N 秒的已结束记录 |
 | `OMP_WORKER_RETENTION_MAX_BYTES` | *（不设置 = 不限制）* | 存储超过 N 字节时，从最旧的已结束记录开始删除 |
@@ -316,7 +316,7 @@ graph LR
 
 **`omp-worker-mcp` 会强制执行的：**
 
-- 设置了 `OMP_WORKER_ALLOWED_ROOTS` 时*（位于尚未发布至 npm 的 `master` 源码中，请通过 commit SHA 标识；npm `0.1.1` 早于该特性）*，任务的 `cwd` 经 `realpath` 解析后必须位于某个允许的根目录内。同名前缀绕过、符号链接 / junction 逃逸都会在 OMP 启动前被拒绝；变量存在但内容无效时直接拒绝执行（fail closed）。
+- 设置了 `OMP_WORKER_ALLOWED_ROOTS` 时*（自 `0.2.0` 起提供；npm `0.1.1` 不具备该特性）*，任务的 `cwd` 经 `realpath` 解析后必须位于某个允许的根目录内。同名前缀绕过、符号链接 / junction 逃逸都会在 OMP 启动前被拒绝；变量存在但内容无效时直接拒绝执行（fail closed）。
 - 批量任务中，并行的 `write` 任务 `ownership` 必须互不重叠，依赖图不能有环——这些都在启动任何 Worker 之前检查。
 - 写入范围和只读要求会作为明确约束传给每个 Worker。
 
@@ -377,7 +377,7 @@ OMP 的默认模型，也就是 `omp setup` 里选的那个（或 `~/.omp/agent/
 <details>
 <summary><b>报错 “outside OMP_WORKER_ALLOWED_ROOTS”。</b></summary>
 
-任务的 `cwd` 不在任何允许的根目录内，说明白名单在正常工作。如果这个目录本该允许，把它加进 `OMP_WORKER_ALLOWED_ROOTS`（注意：`OMP_WORKER_ALLOWED_ROOTS` 位于尚未发布至 npm 的 `master` 源码中，请通过 commit SHA 标识；npm `0.1.1` 早于该特性）。
+任务的 `cwd` 不在任何允许的根目录内，说明白名单在正常工作。如果这个目录本该允许，把它加进 `OMP_WORKER_ALLOWED_ROOTS`（注意：`OMP_WORKER_ALLOWED_ROOTS` 自 `0.2.0` 起提供；npm `0.1.1` 不具备该特性）。
 </details>
 
 <details>

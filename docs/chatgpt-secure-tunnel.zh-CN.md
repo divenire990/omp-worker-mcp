@@ -42,19 +42,16 @@ approved local workspaces
 
 ---
 
-## 2. 版本边界与远程接入前的安全配置
+## 2. 版本要求（`>= 0.2.0`）与远程接入前的安全配置
 
-> **重要提示——未发布的 `master` 源码（通过 commit SHA 标识）vs. 已发布的 npm `0.1.1`：**
-> `OMP_WORKER_ALLOWED_ROOTS` 位于尚未发布至 npm 的 `master` 源码中（请通过 commit SHA 标识源码版本，其 `package.json` 与 CLI 仍显示 `0.1.1`）；已发布的 npm `0.1.1` 早于该特性。当 npm 最新版本仍为 `0.1.1` 时，直接运行 `npx -y omp-worker-mcp` **不会**执行 `OMP_WORKER_ALLOWED_ROOTS` 目录白名单检查。
+> **版本要求（`omp-worker-mcp >= 0.2.0`）：**
+> `OMP_WORKER_ALLOWED_ROOTS` 自 `omp-worker-mcp` `0.2.0` 起提供。历史版本 npm `0.1.1` 不具备该特性，**不会**执行 `OMP_WORKER_ALLOWED_ROOTS` 目录白名单检查（且 `0.1.1` 尚未包含统一的 CLI `--version` 版本读取修复）。
 >
-> 通过 Tunnel 远程暴露 `omp-worker-mcp` 时，请从 `master` 源码构建：
+> 在通过 Tunnel 使用 `"npx -y omp-worker-mcp"` 远程暴露本机执行能力前，请先确认解析到的版本为 `0.2.0` 或更高版本：
 > ```bash
-> git clone https://github.com/divenire990/omp-worker-mcp.git
-> cd omp-worker-mcp
-> npm ci
-> npm run build
+> npx -y omp-worker-mcp@latest --version
 > ```
-> 然后在下文配置中将 `--mcp-command` 指向 `node <仓库绝对路径>/dist/index.js`。（待包含该提交的版本发布至 npm 后，即可直接使用 `"npx -y omp-worker-mcp"`。）
+> 若本机 `npx` 缓存仍停留在 `0.1.1`，请刷新版本（如 `npx -y omp-worker-mcp@latest`），或使用本地 `>= 0.2.0` 源码构建（`npm ci && npm run build`，并将下文 `--mcp-command` 指向 `node <仓库绝对路径>/dist/index.js`）。
 
 远程接入时务必设置 `OMP_WORKER_ALLOWED_ROOTS`。它是一个非空 JSON 数组，元素必须是绝对目录路径：
 
@@ -72,7 +69,7 @@ export OMP_WORKER_OMP_COMMAND=omp
 export OMP_WORKER_ALLOWED_ROOTS='["/Users/alice/Projects","/Users/alice/Research"]'
 ```
 
-在未发布的 `master` 源码构建中启用后，Worker 在真正启动 OMP 子进程前会：
+在 `omp-worker-mcp >= 0.2.0` 中启用后，Worker 在真正启动 OMP 子进程前会：
 
 1. 要求 `cwd` 为存在的绝对目录；
 2. 对 `cwd` 和允许根目录执行 `realpath` 规范化；
@@ -111,7 +108,7 @@ tunnel-client init `
   --sample sample_mcp_stdio_local `
   --profile omp-worker `
   --tunnel-id tunnel_0123456789abcdef0123456789abcdef `
-  --mcp-command "node D:\path\to\omp-worker-mcp\dist\index.js"
+  --mcp-command "npx -y omp-worker-mcp"
 
 tunnel-client doctor --profile omp-worker --explain
 tunnel-client run --profile omp-worker
@@ -126,7 +123,7 @@ tunnel-client init \
   --sample sample_mcp_stdio_local \
   --profile omp-worker \
   --tunnel-id tunnel_0123456789abcdef0123456789abcdef \
-  --mcp-command "node /abs/path/to/omp-worker-mcp/dist/index.js"
+  --mcp-command "npx -y omp-worker-mcp"
 
 tunnel-client doctor --profile omp-worker --explain
 tunnel-client run --profile omp-worker
@@ -141,7 +138,7 @@ tunnel-client runtimes connect \
   --alias omp-worker \
   --tunnel-id tunnel_0123456789abcdef0123456789abcdef \
   --runtime-api-key env:CONTROL_PLANE_API_KEY \
-  --mcp-command "node /abs/path/to/omp-worker-mcp/dist/index.js"
+  --mcp-command "npx -y omp-worker-mcp"
 ```
 
 `tunnel-client` 启动的 stdio 子进程会继承运行时环境，因此上一步设置的 `OMP_WORKER_OMP_COMMAND` 与 `OMP_WORKER_ALLOWED_ROOTS` 会自动传递给 `omp-worker-mcp` 及其派生的 runner。

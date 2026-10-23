@@ -22,7 +22,7 @@
 | :--- | :--- | :--- |
 | `OMP_WORKER_OMP_COMMAND` | OMP CLI 二进制文件的路径或可执行文件名。 | `omp` |
 | `OMP_WORKER_OMP_PREFIX_ARGS` | 每次调用 OMP CLI 时前置添加的参数（JSON 数组字符串，例如 `["--profile", "default"]`）。 | `[]` |
-| `OMP_WORKER_ALLOWED_ROOTS` | 可选：非空 JSON 数组，元素必须是绝对目录*（位于尚未发布至 npm 的 `master` 源码中，请通过 commit SHA 标识；已发布的 npm `0.1.1` 早于该特性）*。所有委托任务的 `cwd` 在 `realpath` 规范化后必须位于其中某个根目录内；会在启动 OMP 前拒绝同前缀兄弟目录以及 symlink / junction 逃逸。若完全不设置该变量，则保持向后兼容、不限制 cwd；若显式设置为空值或非法格式，则执行将 fail closed。通过 Secure MCP Tunnel 或其他远程方式暴露 MCP 时强烈建议配置。 | *(未设置)* |
+| `OMP_WORKER_ALLOWED_ROOTS` | 可选：非空 JSON 数组，元素必须是绝对目录*（自 `0.2.0` 起提供；npm `0.1.1` 不具备该特性）*。所有委托任务的 `cwd` 在 `realpath` 规范化后必须位于其中某个根目录内；会在启动 OMP 前拒绝同前缀兄弟目录以及 symlink / junction 逃逸。若完全不设置该变量，则保持向后兼容、不限制 cwd；若显式设置为空值或非法格式，则执行将 fail closed。通过 Secure MCP Tunnel 或其他远程方式暴露 MCP 时强烈建议配置。 | *(未设置)* |
 | `OMP_WORKER_STATE_DIR` | 用于保存任务状态、尝试记录、日志与产物的根目录路径。 | `~/.codex/state/omp-worker` |
 | `OMP_WORKER_BROWSER_RULES` | 可选：注入到任务提示词中的自定义浏览器自动化指令。 | *(无)* |
 | `OMP_WORKER_RETENTION_TTL_SECONDS` | 可选：终态任务/任务组的保留时间（秒）。未设置时不基于时间自动清理。 | *(无)* |

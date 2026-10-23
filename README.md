@@ -43,7 +43,7 @@ Most coding agents do everything in one place: read the code, plan, edit, run te
 - **Results you can review** — every worker finishes with an `OMP_WORKER_RESULT` envelope: status, summary, changed files, verification evidence and remaining items.
 - **Correct instead of restart** — `omp_continue` sends feedback to the *same* OMP session, so the worker keeps its context.
 - **Persistent jobs** — job records, logs and results live on disk and can still be read after the MCP server restarts.
-- **Works from ChatGPT on the web** — through OpenAI's Secure MCP Tunnel: no inbound port, plus an allowlist (`OMP_WORKER_ALLOWED_ROOTS`, in unreleased `master` source identified by commit SHA; npm `0.1.1` predates this feature) for the directories jobs may run in.
+- **Works from ChatGPT on the web** — through OpenAI's Secure MCP Tunnel: no inbound port, plus an allowlist (`OMP_WORKER_ALLOWED_ROOTS`, available since `0.2.0`; npm `0.1.1` lacks this feature) for the directories jobs may run in.
 
 ## When to use it
 
@@ -110,26 +110,26 @@ direct_only_tool_namespaces = ["mcp__omp_worker"]
 <details>
 <summary><b>ChatGPT (web)</b> — via Secure MCP Tunnel</summary>
 
-> **Version note (unreleased `master` source vs. npm `0.1.1`):** `OMP_WORKER_ALLOWED_ROOTS` is in unreleased `master` source (identify by commit SHA; `package.json` and the CLI still report `0.1.1`); published npm `0.1.1` predates this feature. Before exposing local execution remotely, build from `master` source and pass `node <path-to-repo>/dist/index.js` as `--mcp-command`.
+> **Version requirement (`>= 0.2.0`):** `OMP_WORKER_ALLOWED_ROOTS` is available since `omp-worker-mcp` `0.2.0` (historical npm `0.1.1` lacks this feature and does not enforce `OMP_WORKER_ALLOWED_ROOTS`). Confirm `npx -y omp-worker-mcp@latest --version` reports `0.2.0` or newer before exposing local execution remotely.
 
 Run the server locally behind OpenAI's `tunnel-client`; your machine only makes outbound connections.
 
 ```bash
 export OMP_WORKER_OMP_COMMAND=omp
-export OMP_WORKER_ALLOWED_ROOTS='["/Users/you/Projects"]'   # strongly recommended for remote access (unreleased master source; npm 0.1.1 predates this feature)
+export OMP_WORKER_ALLOWED_ROOTS='["/Users/you/Projects"]'   # strongly recommended for remote access (available since 0.2.0; 0.1.1 lacks this feature)
 export CONTROL_PLANE_API_KEY='<runtime-api-key>'
 
 tunnel-client init \
   --sample sample_mcp_stdio_local \
   --profile omp-worker \
   --tunnel-id <your-tunnel-id> \
-  --mcp-command "node /abs/path/to/omp-worker-mcp/dist/index.js"
+  --mcp-command "npx -y omp-worker-mcp"
 
 tunnel-client doctor --profile omp-worker --explain
 tunnel-client run --profile omp-worker
 ```
 
- Windows PowerShell commands, source-build steps, managed runtime alternatives (`tunnel-client runtimes connect`), permission requirements and the full trust boundary: [ChatGPT Secure MCP Tunnel guide](docs/chatgpt-secure-tunnel.md).
+Windows PowerShell commands, `0.1.1` upgrade / local-build notes, managed runtime alternatives (`tunnel-client runtimes connect`), permission requirements and the full trust boundary: [ChatGPT Secure MCP Tunnel guide](docs/chatgpt-secure-tunnel.md).
 </details>
 
 <details>
@@ -305,7 +305,7 @@ Everything is configured through environment variables, set in the client's MCP 
 | Variable | Default | Purpose |
 | :--- | :--- | :--- |
 | `OMP_WORKER_OMP_COMMAND` | `omp` | OMP executable name or full path |
-| `OMP_WORKER_ALLOWED_ROOTS` | *(unset = no restriction)* | JSON array of absolute directories that jobs must run inside. **Set this for any remote use.** *(In unreleased `master` source — identify by commit SHA; published npm `0.1.1` predates this feature.)* |
+| `OMP_WORKER_ALLOWED_ROOTS` | *(unset = no restriction)* | JSON array of absolute directories that jobs must run inside. **Set this for any remote use.** *(Available since `0.2.0`; npm `0.1.1` lacks this feature.)* |
 | `OMP_WORKER_STATE_DIR` | `~/.codex/state/omp-worker` | Where job state, prompts and logs are stored (the default path is used even if you don't use Codex) |
 | `OMP_WORKER_RETENTION_TTL_SECONDS` | *(unset = keep forever)* | Delete finished records older than N seconds |
 | `OMP_WORKER_RETENTION_MAX_BYTES` | *(unset = no limit)* | Delete the oldest finished records once the store exceeds N bytes |
@@ -318,7 +318,7 @@ All variables, the on-disk layout and restart behaviour: [Operations](docs/opera
 
 **What `omp-worker-mcp` enforces**
 
-- With `OMP_WORKER_ALLOWED_ROOTS` set *(in unreleased `master` source — identify by commit SHA; npm `0.1.1` predates this feature)*, a job's `cwd` must resolve (via `realpath`) inside an approved root. Sibling-prefix tricks and symlink/junction escapes are rejected before OMP starts; a present-but-invalid value fails closed.
+- With `OMP_WORKER_ALLOWED_ROOTS` set *(available since `0.2.0`; npm `0.1.1` lacks this feature)*, a job's `cwd` must resolve (via `realpath`) inside an approved root. Sibling-prefix tricks and symlink/junction escapes are rejected before OMP starts; a present-but-invalid value fails closed.
 - In a batch, parallel `write` tasks must have disjoint `ownership`, and the graph must be acyclic — checked before any worker is spawned.
 - Ownership and read-only intent are passed to each worker as explicit constraints.
 
@@ -379,7 +379,7 @@ OMP's default model — the one chosen in `omp setup` (or `modelRoles.default` i
 <details>
 <summary><b>"outside OMP_WORKER_ALLOWED_ROOTS" error.</b></summary>
 
-The task's `cwd` is not inside any approved root. This is the allowlist working; add the directory to `OMP_WORKER_ALLOWED_ROOTS` if it should be allowed (note: `OMP_WORKER_ALLOWED_ROOTS` is in unreleased `master` source identified by commit SHA; npm `0.1.1` predates this feature).
+The task's `cwd` is not inside any approved root. This is the allowlist working; add the directory to `OMP_WORKER_ALLOWED_ROOTS` if it should be allowed (note: `OMP_WORKER_ALLOWED_ROOTS` is available since `0.2.0`; npm `0.1.1` lacks this feature).
 </details>
 
 <details>

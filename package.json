@@ -1,6 +1,6 @@
 {
   "name": "omp-worker-mcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "mcpName": "io.github.divenire990/omp-worker-mcp",
   "type": "module",
   "description": "MCP server that lets ChatGPT, Codex, Claude Code and other agents hand off coding tasks and DAG batches to local Oh My Pi (OMP) workers.",

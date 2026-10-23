@@ -42,19 +42,16 @@ OpenAI `tunnel-client` can launch a local stdio MCP child process through `--mcp
 
 ---
 
-## 2. Version boundary & security configuration before remote access
+## 2. Version requirement (`>= 0.2.0`) & security configuration before remote access
 
-> **Important — unreleased `master` source (identify by commit SHA) vs. published npm `0.1.1`:**
-> `OMP_WORKER_ALLOWED_ROOTS` is in unreleased `master` source (identify by commit SHA; `package.json` and the CLI still report `0.1.1`); published npm `0.1.1` predates this feature. Running `npx -y omp-worker-mcp` while `0.1.1` is latest on npm will **not** enforce `OMP_WORKER_ALLOWED_ROOTS`.
+> **Version requirement (`omp-worker-mcp >= 0.2.0`):**
+> `OMP_WORKER_ALLOWED_ROOTS` is available starting in `omp-worker-mcp` `0.2.0`. Historical npm `0.1.1` lacks this feature and will **not** enforce `OMP_WORKER_ALLOWED_ROOTS` (nor did `0.1.1` include the single-source CLI `--version` reader).
 >
-> Build from unreleased `master` source when exposing `omp-worker-mcp` through a tunnel:
+> Before exposing `omp-worker-mcp` through a tunnel with `"npx -y omp-worker-mcp"`, verify that your resolved package is `0.2.0` or newer:
 > ```bash
-> git clone https://github.com/divenire990/omp-worker-mcp.git
-> cd omp-worker-mcp
-> npm ci
-> npm run build
+> npx -y omp-worker-mcp@latest --version
 > ```
-> Then pass `node <absolute-path-to-repo>/dist/index.js` to `--mcp-command` below. (Once a release containing this commit is published to npm, `"npx -y omp-worker-mcp"` can be used directly.)
+> If your local `npx` cache still resolves `0.1.1`, clear or update it (`npx -y omp-worker-mcp@latest`) or run a local `>= 0.2.0` checkout (`npm ci && npm run build`, then pass `node <absolute-path-to-repo>/dist/index.js` to `--mcp-command`).
 
 For remote exposure, always set `OMP_WORKER_ALLOWED_ROOTS`. It is a non-empty JSON array of absolute directory paths.
 
@@ -72,7 +69,7 @@ export OMP_WORKER_OMP_COMMAND=omp
 export OMP_WORKER_ALLOWED_ROOTS='["/Users/alice/Projects","/Users/alice/Research"]'
 ```
 
-When enabled on an unreleased `master` source build, the worker checks immediately before spawning OMP that:
+When enabled (requires `omp-worker-mcp >= 0.2.0`), the worker checks immediately before spawning OMP that:
 
 1. `cwd` is an existing absolute directory;
 2. `cwd` and configured roots are canonicalized through `realpath`;
@@ -111,7 +108,7 @@ tunnel-client init `
   --sample sample_mcp_stdio_local `
   --profile omp-worker `
   --tunnel-id tunnel_0123456789abcdef0123456789abcdef `
-  --mcp-command "node D:\path\to\omp-worker-mcp\dist\index.js"
+  --mcp-command "npx -y omp-worker-mcp"
 
 tunnel-client doctor --profile omp-worker --explain
 tunnel-client run --profile omp-worker
@@ -126,7 +123,7 @@ tunnel-client init \
   --sample sample_mcp_stdio_local \
   --profile omp-worker \
   --tunnel-id tunnel_0123456789abcdef0123456789abcdef \
-  --mcp-command "node /abs/path/to/omp-worker-mcp/dist/index.js"
+  --mcp-command "npx -y omp-worker-mcp"
 
 tunnel-client doctor --profile omp-worker --explain
 tunnel-client run --profile omp-worker
@@ -141,7 +138,7 @@ tunnel-client runtimes connect \
   --alias omp-worker \
   --tunnel-id tunnel_0123456789abcdef0123456789abcdef \
   --runtime-api-key env:CONTROL_PLANE_API_KEY \
-  --mcp-command "node /abs/path/to/omp-worker-mcp/dist/index.js"
+  --mcp-command "npx -y omp-worker-mcp"
 ```
 
 The stdio process launched by `tunnel-client` inherits its runtime environment, so `OMP_WORKER_OMP_COMMAND` and `OMP_WORKER_ALLOWED_ROOTS` are inherited by `omp-worker-mcp` and its detached runners.

@@ -7,17 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-23
+
 ### Added
 
 - Execution-root allowlist via `OMP_WORKER_ALLOWED_ROOTS` (`realpath` canonicalization, sibling-prefix and symlink/junction escape rejection, fail-closed validation) and bilingual ChatGPT Secure MCP Tunnel guides (`docs/chatgpt-secure-tunnel.md`, `docs/chatgpt-secure-tunnel.zh-CN.md`).
+- Optional `OMP_WORKER_ALLOWED_ROOTS` environment variable metadata in `server.json`.
 - Windows CI coverage alongside macOS and Ubuntu in `.github/workflows/ci.yml`, plus resilient terminal-wait and detached DAG long-run tests.
+- Automated CI-gated release workflow (`.github/workflows/publish.yml`) and release verification/publishing scripts (`scripts/check-release.mjs`, `scripts/publish-release.mjs`, `scripts/release.mjs`, `tests/release.test.mjs`) for npm and the Official MCP Registry.
 - `CONTRIBUTING.md`, `CONTRIBUTING.zh-CN.md`, `SECURITY.md`, issue / pull request templates and Dependabot configuration.
+
+### Fixed
+
+- Unified runtime version reporting across `bin/omp-worker-mcp.mjs` (`--version` / `-v`), MCP `serverInfo.version`, and `package-lock.json` via single-source `src/version.ts` (`readPackageVersion`), removing the hardcoded `"1.0.0"` fallback.
+- Removed redundant `packages[0].runtimeArguments` from `server.json` per Official MCP Registry npm package conventions so Registry clients derive versioned `npx` startup directly from `identifier` and `version`.
 
 ### Documentation
 
 - Rewrote `README.md` and `README.zh-CN.md` around the supervisor–worker workflow: who it is for, per-client quick start, a delegation policy snippet, single-task and DAG examples, tool table, safety model and FAQ.
-- Scoped `OMP_WORKER_ALLOWED_ROOTS` and Secure MCP Tunnel instructions to distinguish unreleased `master` source (identified by commit SHA, while `package.json` still reports `0.1.1`) from published npm `0.1.1`, which predates the allowlist check, with reproducible source-build instructions for remote tunnel deployments.
+- Documented `OMP_WORKER_ALLOWED_ROOTS` and Secure MCP Tunnel setup for `omp-worker-mcp >= 0.2.0` (`npx -y omp-worker-mcp` stdio setup, with a historical upgrade note that npm `0.1.1` lacks the allowlist check).
 - Updated Secure MCP Tunnel commands to match current `tunnel-client` CLI (`init --sample sample_mcp_stdio_local` → `doctor` → `run`, plus optional `runtimes connect`) and OpenAI permission requirements (`CONTROL_PLANE_API_KEY` with Tunnels Read + Use).
+- Rewrote `docs/registry-publishing.md` and `docs/registry-publishing.zh-CN.md` for the official `mcp-publisher` CLI (`validate`, `login github-oidc` / `login github`, `publish`) and CI-gated `.github/workflows/publish.yml` automation.
 - Updated Codex direct namespace guidance to distinguish the current official `features.code_mode.direct_only_tool_namespaces` setting from legacy top-level `direct_only_tool_namespaces` configs, clarifying that it is an optional Code Mode preference.
 - Replaced the README hero animation with an architecture diagram (`assets/how-it-works.svg`, `assets/how-it-works.zh-CN.svg`) and added a social preview image (`assets/social-preview.png`).
 - Corrected on-disk state and log filenames (`job.json`, `group.json`, `attempt-NN.prompt.md`, `attempt-NN.stdout.jsonl`, `attempt-NN.stderr.log`), `omp_wait` (`wait_seconds`) parameter docs, non-terminal status names, and platform/client verification tables across `COMPATIBILITY.md`, `docs/operations*.md`, `docs/tool-reference*.md`, and `.github/ISSUE_TEMPLATE/bug_report.yml`.

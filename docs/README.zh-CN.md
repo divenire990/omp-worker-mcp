@@ -30,10 +30,10 @@
 | :--- | :--- | :--- |
 | [**作者工作流启用教程与架构参考**](author-workflow.zh-CN.md) | 工作流启用教程、策略模板与架构参考。 | • 工具可用性、可选 Code Mode 直接命名空间访问与选择策略<br>• Codex `features.code_mode.direct_only_tool_namespaces`（及旧版）配置步骤<br>• 可复用的项目级策略模板（`AGENTS.md` / `CLAUDE.md`）<br>• 一次性验证提示词与预期现象<br>• 主控与 Worker 监督闭环（6 步生命周期）<br>• 执行策略对比矩阵（直接处理 vs. 单任务 vs. 批量 DAG）<br>• 作者个人 Gemini / Antigravity 实测体验（明确为非保证参考）<br>• 发布与撰写工作流的安全准则 |
 | [**客户端接入与配置指南**](client-configurations.zh-CN.md) | 各类 MCP 主控 Harness 的接入与配置说明。 | • 本地 stdio 兼容性前提条件<br>• 证据分级支持矩阵（实测验证 vs. 文档可复制 vs. 有条件支持）<br>• 通用 `mcpServers` JSON 配置模板<br>• 具体客户端配置（Codex、Claude Code、Cursor、VS Code / Copilot、Windsurf、Continue）<br>• 官方文档参考链接与直接使用边界 |
-| [**ChatGPT Secure MCP Tunnel 接入指南**](chatgpt-secure-tunnel.zh-CN.md) | 将网页端 ChatGPT 连接到本机 `omp-worker-mcp` 的远程 Supervisor-Worker 方案。 | • OpenAI `tunnel-client`（`init` / `doctor` / `run` 与 `runtimes`）stdio MCP 接入<br>• `OMP_WORKER_ALLOWED_ROOTS` 目录白名单（`master` 与 npm `0.1.1` 版本边界）<br>• symlink / junction 逃逸防护<br>• runtime 健康检查与信任边界 |
+| [**ChatGPT Secure MCP Tunnel 接入指南**](chatgpt-secure-tunnel.zh-CN.md) | 将网页端 ChatGPT 连接到本机 `omp-worker-mcp` 的远程 Supervisor-Worker 方案。 | • OpenAI `tunnel-client`（`init` / `doctor` / `run` 与 `runtimes`）stdio MCP 接入<br>• `OMP_WORKER_ALLOWED_ROOTS` 目录白名单（`>= 0.2.0` 要求与 `0.1.1` 升级说明）<br>• symlink / junction 逃逸防护<br>• runtime 健康检查与信任边界 |
 | [**运维配置与状态生命周期**](operations.zh-CN.md) | 运行时配置、持久化内部机制与日常运维管理。 | • 环境变量完整参考表<br>• 磁盘状态目录布局（`~/.codex/state/omp-worker`）<br>• 保留与清理策略（TTL 与磁盘容量阈值）<br>• 服务器重启、崩溃恢复与进程解耦 |
 | [**工具参考与安全约束**](tool-reference.zh-CN.md) | 全部 MCP 工具的详细参数、规格与安全协议约定。 | • 单任务委托工具集（`omp_run_compact`、`omp_delegate` 等）<br>• 批量任务与 DAG 编排工具集（`omp_run_batch_compact` 等）<br>• 路径所有权隔离规则（`write` vs. `read_only`）<br>• 结构化结果信封约定（`OMP_WORKER_RESULT`） |
-| [**官方 MCP Registry 发布指南**](registry-publishing.zh-CN.md) | 针对维护者的 npm 与官方 MCP Registry 发布流程。 | • 核心元数据文件（`package.json`、`server.json`）<br>• 正式发布执行顺序（npm 发布与 MCP Publisher CLI）<br>• 版本核验与安全发布边界 |
+| [**官方 MCP Registry 发布指南**](registry-publishing.zh-CN.md) | 针对维护者的 npm 与官方 MCP Registry 发布流程。 | • 核心元数据文件（`package.json`、`server.json`）<br>• 官方 `mcp-publisher` CLI（`validate`、`login`、`publish`）<br>• CI 门控 `.github/workflows/publish.yml` 与 OIDC / Token 回退机制 |
 
 ---
 
