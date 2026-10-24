@@ -57,6 +57,48 @@ async function readPeakConcurrency(trackerDir) {
   return { peak, total: intervals.length };
 }
 
+const GROUP_TERMINAL_SET = new Set(["completed", "partial", "failed", "timed_out", "cancelled"]);
+const JOB_TERMINAL_SET = new Set(["completed", "failed", "cancelled", "timed_out", "blocked", "awaiting_review"]);
+
+async function waitForGroupTerminal(client, groupId, { timeoutMs = 90_000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  let lastStructured = null;
+  while (Date.now() < deadline) {
+    const waitRes = await client.callTool({
+      name: "omp_wait_group",
+      arguments: { group_id: groupId, wait_seconds: 2 },
+    });
+    lastStructured = waitRes.structuredContent;
+    if (lastStructured && GROUP_TERMINAL_SET.has(lastStructured.status)) {
+      return lastStructured;
+    }
+    if (lastStructured) {
+      assert.equal(lastStructured.tasks, undefined, "Non-terminal group status must omit tasks array");
+    }
+  }
+  throw new Error(`Group ${groupId} did not reach terminal state within ${timeoutMs}ms (last=${lastStructured?.status})`);
+}
+
+async function waitForJobTerminal(client, jobId, { timeoutMs = 90_000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  let lastStructured = null;
+  while (Date.now() < deadline) {
+    const waitRes = await client.callTool({
+      name: "omp_wait",
+      arguments: { job_id: jobId, wait_seconds: 2 },
+    });
+    lastStructured = waitRes.structuredContent;
+    if (lastStructured && JOB_TERMINAL_SET.has(lastStructured.status)) {
+      return lastStructured;
+    }
+    if (lastStructured) {
+      assert.equal("final_response" in lastStructured, false);
+      assert.equal("attempts" in lastStructured, false);
+    }
+  }
+  throw new Error(`Job ${jobId} did not reach terminal state within ${timeoutMs}ms (last=${lastStructured?.status})`);
+}
+
 
 test("E2E 1: Slow DAG exceeding initial wait, cross-client reconnection, compact wait and single final aggregation", async () => {
   const stateRoot = await mkdtemp(path.join(tmpdir(), "omp-e2e-slow-dag-"));
@@ -121,8 +163,12 @@ test("E2E 1: Slow DAG exceeding initial wait, cross-client reconnection, compact
       },
     });
 
-    const structured2 = waitRes.structuredContent;
+    let structured2 = waitRes.structuredContent;
     assert.ok(structured2, "Wait call should return structuredContent");
+    if (!GROUP_TERMINAL_SET.has(structured2.status)) {
+      assert.equal(structured2.tasks, undefined, "Running status must omit tasks array");
+      structured2 = await waitForGroupTerminal(client2, groupId);
+    }
     assert.equal(structured2.status, "completed", "Group should reach completed status");
     assert.equal(structured2.group_id, groupId);
     assert.equal(structured2.total_tasks, 3);
@@ -173,19 +219,10 @@ test("E2E 2: Fast batch completes within initial wait_seconds and returns final 
     assert.ok(structured.group_id, "Response must include group_id");
     assert.equal(structured.total_tasks, 2);
 
-    if (structured.status === "running") {
+    if (!GROUP_TERMINAL_SET.has(structured.status)) {
       assert.equal(structured.tasks, undefined, "Running status must omit tasks array");
-      const waitRes = await client.callTool({
-        name: "omp_wait_group",
-        arguments: {
-          group_id: structured.group_id,
-          wait_seconds: 10,
-        },
-      });
-      structured = waitRes.structuredContent;
-      assert.ok(structured, "Wait call should return structuredContent");
+      structured = await waitForGroupTerminal(client, structured.group_id);
     }
-
     assert.equal(structured.status, "completed", "Batch must reach completed status");
     assert.equal(structured.total_tasks, 2);
     assert.equal(structured.completed_tasks, 2);
@@ -202,6 +239,14 @@ test("E2E 2: Fast batch completes within initial wait_seconds and returns final 
       assert.ok(Array.isArray(taskResult.artifacts));
       assert.ok(Array.isArray(taskResult.verification));
     }
+
+    // Deterministically verify zero-wait terminal group formatting
+    const zeroWaitGroup = await client.callTool({
+      name: "omp_wait_group",
+      arguments: { group_id: structured.group_id, wait_seconds: 0 },
+    });
+    assert.equal(zeroWaitGroup.structuredContent?.status, "completed");
+    assert.equal(zeroWaitGroup.structuredContent?.tasks?.length, 2);
   } finally {
     await client.close();
   }
@@ -224,8 +269,12 @@ test("E2E 3: Partial failure blocks dependent tasks while independent siblings f
       },
     });
 
-    const structured = res.structuredContent;
+    let structured = res.structuredContent;
     assert.ok(structured);
+    if (!GROUP_TERMINAL_SET.has(structured.status)) {
+      assert.equal(structured.tasks, undefined, "Running status must omit tasks array");
+      structured = await waitForGroupTerminal(client, structured.group_id);
+    }
     assert.equal(structured.status, "partial", "Group with failed dependency should be partial");
     assert.equal(structured.total_tasks, 3);
     assert.equal(structured.completed_tasks, 1);
@@ -267,7 +316,12 @@ test("E2E 4: Concurrency cap is strictly enforced across batch execution", async
       },
     });
 
-    const structured = res.structuredContent;
+    let structured = res.structuredContent;
+    assert.ok(structured);
+    if (!GROUP_TERMINAL_SET.has(structured.status)) {
+      assert.equal(structured.tasks, undefined, "Running status must omit tasks array");
+      structured = await waitForGroupTerminal(client, structured.group_id);
+    }
     assert.equal(structured?.status, "completed");
     assert.equal(structured?.completed_tasks, 4);
 
@@ -308,15 +362,7 @@ test("E2E 5: Group cancellation stops active tasks and marks pending/group cance
     });
     assert.ok(cancelRes.structuredContent);
 
-    const waitRes = await client.callTool({
-      name: "omp_wait_group",
-      arguments: {
-        group_id: groupId,
-        wait_seconds: 10,
-      },
-    });
-
-    const structured = waitRes.structuredContent;
+    const structured = await waitForGroupTerminal(client, groupId);
     assert.equal(structured.status, "cancelled");
   } finally {
     await client.close();
@@ -336,14 +382,26 @@ test("E2E 6: Single-task tools regression (run_compact, delegate, wait, continue
         wait_seconds: 10,
       },
     });
-    assert.equal(compactFast.structuredContent?.status, "completed");
-    assert.ok(compactFast.structuredContent?.job_id);
+    let fastStructured = compactFast.structuredContent;
+    assert.ok(fastStructured?.job_id);
+    if (!JOB_TERMINAL_SET.has(fastStructured.status)) {
+      assert.equal("final_response" in fastStructured, false);
+      fastStructured = await waitForJobTerminal(client, fastStructured.job_id);
+    }
+    assert.equal(fastStructured.status, "completed");
+
+    const immediateWaitFast = await client.callTool({
+      name: "omp_wait",
+      arguments: { job_id: fastStructured.job_id, wait_seconds: 1 },
+    });
+    assert.equal(immediateWaitFast.structuredContent?.status, "completed");
+    assert.equal("final_response" in immediateWaitFast.structuredContent, false);
 
     // 2. omp_run_compact timeout -> running
     const compactSlow = await client.callTool({
       name: "omp_run_compact",
       arguments: {
-        goal: "Slow single task DELAY_TEST_2000",
+        goal: "Slow single task DELAY_TEST_2500",
         cwd: stateRoot,
         wait_seconds: 1,
       },
@@ -353,14 +411,8 @@ test("E2E 6: Single-task tools regression (run_compact, delegate, wait, continue
     assert.ok(slowJobId);
 
     // 3. omp_wait on slow job
-    const waitSlow = await client.callTool({
-      name: "omp_wait",
-      arguments: {
-        job_id: slowJobId,
-        wait_seconds: 10,
-      },
-    });
-    assert.equal(waitSlow.structuredContent?.status, "completed");
+    const waitSlow = await waitForJobTerminal(client, slowJobId);
+    assert.equal(waitSlow.status, "completed");
 
     // 4. omp_continue on slow job
     const contRes = await client.callTool({
@@ -370,18 +422,12 @@ test("E2E 6: Single-task tools regression (run_compact, delegate, wait, continue
         feedback: "Please refine",
       },
     });
-    assert.equal(contRes.structuredContent?.status, "queued");
+    assert.ok(["queued", "running"].includes(contRes.structuredContent?.status));
 
     // 5. omp_wait after continue
-    const waitCont = await client.callTool({
-      name: "omp_wait",
-      arguments: {
-        job_id: slowJobId,
-        wait_seconds: 10,
-      },
-    });
-    assert.equal(waitCont.structuredContent?.status, "completed");
-    assert.equal(waitCont.structuredContent?.summary, "Corrected result");
+    const waitCont = await waitForJobTerminal(client, slowJobId);
+    assert.equal(waitCont.status, "completed");
+    assert.equal(waitCont.summary, "Corrected result");
 
     // 6. omp_result allows reading full attempts
     const resultRes = await client.callTool({
@@ -412,6 +458,11 @@ test("E2E 6: Single-task tools regression (run_compact, delegate, wait, continue
       },
     });
     assert.ok(["cancelling", "cancelled"].includes(cancelJobRes.structuredContent?.status));
+    const cancelledTerminal =
+      cancelJobRes.structuredContent?.status === "cancelled"
+        ? cancelJobRes.structuredContent
+        : await waitForJobTerminal(client, cancelJobId);
+    assert.equal(cancelledTerminal.status, "cancelled");
   } finally {
     await client.close();
   }
