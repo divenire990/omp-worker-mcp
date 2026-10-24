@@ -106,9 +106,15 @@ test("omp_run_compact completes within wait_seconds and returns compact summary 
       },
     });
 
-    const structured = runResult.structuredContent;
+    let structured = runResult.structuredContent;
     assert.ok(structured, "structuredContent must be returned");
     assert.equal(typeof structured.job_id, "string");
+    if (structured.status === "running" || structured.status === "queued") {
+      assert.equal("final_response" in structured, false);
+      assert.equal("attempts" in structured, false);
+      assert.equal(structured.details_path, undefined);
+      structured = await waitForTerminal(client, structured.job_id);
+    }
     assert.equal(structured.status, "completed");
     assert.equal(structured.attempt, 1);
     assert.equal(structured.max_attempts, 3);
@@ -121,6 +127,18 @@ test("omp_run_compact completes within wait_seconds and returns compact summary 
 
     assert.equal("final_response" in structured, false);
     assert.equal("attempts" in structured, false);
+
+    // Deterministically verify immediate terminal formatting on already-completed job
+    const immediateWaitRes = await client.callTool({
+      name: "omp_wait",
+      arguments: { job_id: structured.job_id, wait_seconds: 1 },
+    });
+    const zeroWaitStructured = immediateWaitRes.structuredContent;
+    assert.equal(zeroWaitStructured.status, "completed");
+    assert.equal(zeroWaitStructured.summary, "Initial result");
+    assert.equal(zeroWaitStructured.details_path, structured.details_path);
+    assert.equal("final_response" in zeroWaitStructured, false);
+    assert.equal("attempts" in zeroWaitStructured, false);
 
     const storedJob = JSON.parse(await readFile(structured.details_path, "utf8"));
     assert.equal(storedJob.id, structured.job_id);

@@ -51,8 +51,12 @@ export async function terminateOwnedProcessTree(child: ChildProcess): Promise<vo
   child.once("close", clearKillTimer);
 }
 
-async function main(): Promise<void> {
-  const jobFile = process.argv[2];
+export interface RunnerDependencies {
+  writeJobFn?: typeof writeJob;
+}
+
+export async function runJobAttempt(jobFile: string, deps: RunnerDependencies = {}): Promise<void> {
+  const writeJobImpl = deps.writeJobFn ?? writeJob;
   if (!jobFile) throw new Error("runner requires a job.json path");
   const initial = JSON.parse(await readFile(path.resolve(jobFile), "utf8")) as JobRecord;
   const job = await readJob(initial.id);
@@ -68,7 +72,7 @@ async function main(): Promise<void> {
   attempt.runnerPid = process.pid;
   attempt.startedAt = new Date().toISOString();
   job.status = "running";
-  await writeJob(job);
+  await writeJobImpl(job);
 
   const cancelPath = cancellationFilePath(job.id);
   if (existsSync(cancelPath)) {
@@ -78,7 +82,7 @@ async function main(): Promise<void> {
     attempt.completedAt = now;
     job.status = "cancelled";
     await clearCancellationRequest(job.id);
-    await writeJob(job);
+    await writeJobImpl(job);
     return;
   }
 
@@ -117,8 +121,6 @@ async function main(): Promise<void> {
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
   });
-  attempt.ompPid = child.pid;
-  await writeJob(job);
 
   child.stdout.pipe(stdoutStream);
   child.stderr.pipe(stderrStream);
@@ -138,6 +140,23 @@ async function main(): Promise<void> {
     }
   });
 
+  const completionPromise = new Promise<{ exitCode: number | null; spawnError?: Error }>((resolve) => {
+    let settled = false;
+    child.once("error", (err) => {
+      if (settled) return;
+      settled = true;
+      resolve({ exitCode: null, spawnError: err });
+    });
+    child.once("close", (code) => {
+      if (settled) return;
+      settled = true;
+      resolve({ exitCode: code });
+    });
+  });
+
+  attempt.ompPid = child.pid;
+  await writeJobImpl(job);
+
   let terminationReason: "cancelled" | "timed_out" | undefined;
   let stopRequested = false;
   const requestStop = (reason: "cancelled" | "timed_out") => {
@@ -155,16 +174,18 @@ async function main(): Promise<void> {
   }, (attempt.timeoutMinutes + 2) * 60_000);
   hardTimeout.unref();
 
-  const exitCode = await new Promise<number | null>((resolve, reject) => {
-    child.once("error", reject);
-    child.once("close", resolve);
-  });
+  const { exitCode, spawnError } = await completionPromise;
   clearInterval(cancelPoll);
   clearTimeout(hardTimeout);
+  if (spawnError) {
+    lines.close();
+    await new Promise<void>((resolve) => stdoutStream.end(resolve));
+    await new Promise<void>((resolve) => stderrStream.end(resolve));
+    throw spawnError;
+  }
   await linesClosed;
   await new Promise<void>((resolve) => stdoutStream.end(resolve));
   await new Promise<void>((resolve) => stderrStream.end(resolve));
-
   const latest = await readJob(job.id);
   const latestAttempt = latest.attempts.find((item) => item.number === latest.currentAttempt);
   if (!latestAttempt) throw new Error("Current attempt disappeared while runner was active");
@@ -205,7 +226,11 @@ async function main(): Promise<void> {
     }
   }
   await clearCancellationRequest(latest.id);
-  await writeJob(latest);
+  await writeJobImpl(latest);
+}
+
+async function main(): Promise<void> {
+  await runJobAttempt(process.argv[2] || "");
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
