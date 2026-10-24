@@ -536,19 +536,21 @@ export async function publishToNpm({ tarballPath, targetVersion, packageName = E
   }
 }
 
-export async function verifyNpmVersionAvailable({ packageName = EXPECTED_PACKAGE_NAME, targetVersion, expectedMcpName = EXPECTED_MCP_NAME, expectedShasum = null, fetchImpl = globalThis.fetch, registryUrl = DEFAULT_NPM_REGISTRY_URL, maxAttempts = 6, retryDelayMs = 2_000, sleepImpl = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+export async function verifyNpmVersionAvailable({ packageName = EXPECTED_PACKAGE_NAME, targetVersion, expectedMcpName = EXPECTED_MCP_NAME, expectedShasum = null, fetchImpl = globalThis.fetch, registryUrl = DEFAULT_NPM_REGISTRY_URL, maxAttempts = 24, retryDelayMs = 5_000, maxWaitMs = 120_000, nowImpl = () => performance.now(), sleepImpl = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const url = `${registryUrl.replace(/\/+$/, "")}/${encodeURIComponent(packageName)}/${encodeURIComponent(targetVersion)}`;
-  let lastError = null;
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+  const deadline = nowImpl() + maxWaitMs;
+  let lastError = new ReleaseError("NPM_VERIFICATION_TIMEOUT", `${packageName}@${targetVersion} did not become visible within the npm verification budget`, { category: "npm", retryable: true });
+  for (let attempt = 1; attempt <= maxAttempts && nowImpl() < deadline; attempt += 1) {
     try {
-      const response = await fetchImpl(url, { method: "GET", headers: { Accept: "application/json" }, signal: AbortSignal.timeout(15_000) });
+      const requestTimeout = Math.max(1, Math.ceil(Math.min(15_000, deadline - nowImpl())));
+      const response = await fetchImpl(url, { method: "GET", headers: { Accept: "application/json", "Cache-Control": "no-cache" }, signal: AbortSignal.timeout(requestTimeout) });
       if (response.status === 200) {
         const data = await response.json();
         if (data.version !== targetVersion || data.mcpName !== expectedMcpName) {
           throw new ReleaseError("NPM_VERIFICATION_FAILED", `Published npm metadata mismatch (${data.version}, ${data.mcpName})`);
         }
-        if (expectedShasum && data.dist?.shasum && data.dist.shasum.toLowerCase() !== expectedShasum.toLowerCase()) {
-          throw new ReleaseError("NPM_VERIFICATION_FAILED", "Published npm tarball shasum mismatch");
+        if (expectedShasum && (typeof data.dist?.shasum !== "string" || data.dist.shasum.toLowerCase() !== expectedShasum.toLowerCase())) {
+          throw new ReleaseError("NPM_VERIFICATION_FAILED", "Published npm tarball shasum missing or mismatched");
         }
         return { verified: true, version: data.version, mcpName: data.mcpName, shasum: data.dist?.shasum ?? null, attempts: attempt };
       }
@@ -559,7 +561,8 @@ export async function verifyNpmVersionAvailable({ packageName = EXPECTED_PACKAGE
       if (error instanceof ReleaseError && error.code === "NPM_VERIFICATION_FAILED") throw error;
       lastError = classifyNetworkError(error, "npm version verification");
     }
-    if (attempt < maxAttempts) await sleepImpl(retryDelayMs);
+    const remaining = deadline - nowImpl();
+    if (attempt < maxAttempts && remaining > 0) await sleepImpl(Math.min(retryDelayMs, remaining));
   }
   throw lastError;
 }

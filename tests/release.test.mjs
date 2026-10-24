@@ -25,6 +25,7 @@ import {
   verifyCheckoutAndAncestry,
   verifyCiJobsGate,
   verifyMcpPublisherChecksum,
+  verifyNpmVersionAvailable,
   verifyOidcRuntimePrerequisites,
   verifyReleaseArtifact,
 } from "../scripts/release.mjs";
@@ -409,6 +410,81 @@ test("fetchNpmRegistryState fails closed on timeouts, DNS failures, HTTP 5xx/429
       }),
     (err) => err instanceof ReleaseError && err.code === "NETWORK_ERROR" && err.details.status === 404,
   );
+});
+
+test("npm verification tolerates delayed propagation beyond the old six-attempt window", async () => {
+  let elapsed = 0;
+  let calls = 0;
+  const waits = [];
+  const shasum = "a".repeat(40);
+  const result = await verifyNpmVersionAvailable({
+    targetVersion: "0.2.1",
+    expectedShasum: shasum,
+    nowImpl: () => elapsed,
+    sleepImpl: async (ms) => { waits.push(ms); elapsed += ms; },
+    fetchImpl: async (_url, options) => {
+      calls++;
+      assert.equal(options.headers["Cache-Control"], "no-cache");
+      return calls < 19 ? new Response("{}", { status: 404 }) : new Response(JSON.stringify({
+        version: "0.2.1", mcpName: EXPECTED_MCP_NAME, dist: { shasum },
+      }));
+    },
+  });
+  assert.equal(result.verified, true);
+  assert.equal(result.attempts, 19);
+  assert.equal(elapsed, 90_000);
+  assert.deepEqual(waits, Array(18).fill(5_000));
+});
+
+test("npm propagation deadline includes request time and caps the final sleep", async () => {
+  let elapsed = 0;
+  let calls = 0;
+  const waits = [];
+  await assert.rejects(() => verifyNpmVersionAvailable({
+    targetVersion: "0.2.1", maxWaitMs: 12_000, maxAttempts: 100,
+    nowImpl: () => elapsed,
+    sleepImpl: async (ms) => { waits.push(ms); elapsed += ms; },
+    fetchImpl: async () => {
+      calls++;
+      elapsed += 2_000;
+      return new Response("{}", { status: 404 });
+    },
+  }), (error) => error instanceof ReleaseError && error.code === "NPM_VERIFICATION_TIMEOUT");
+  assert.equal(elapsed, 12_000);
+  assert.equal(calls, 2);
+  assert.deepEqual(waits, [5_000, 3_000]);
+});
+
+test("npm verification rejects metadata or checksum mismatches immediately, including missing checksum", async () => {
+  const shasum = "a".repeat(40);
+  const valid = { version: "0.2.1", mcpName: EXPECTED_MCP_NAME, dist: { shasum } };
+  for (const data of [
+    { ...valid, version: "0.2.0" },
+    { ...valid, mcpName: "io.github.someone/other" },
+    { ...valid, dist: { shasum: "b".repeat(40) } },
+    { ...valid, dist: {} },
+  ]) {
+    let calls = 0;
+    await assert.rejects(() => verifyNpmVersionAvailable({
+      targetVersion: "0.2.1", expectedShasum: shasum,
+      fetchImpl: async () => { calls++; return new Response(JSON.stringify(data)); },
+      sleepImpl: async () => assert.fail("Permanent mismatch must not be retried"),
+    }), (error) => error instanceof ReleaseError && error.code === "NPM_VERIFICATION_FAILED");
+    assert.equal(calls, 1);
+  }
+});
+
+test("npm verification network failures remain bounded and are not mistaken for publication success", async () => {
+  let elapsed = 0;
+  let calls = 0;
+  await assert.rejects(() => verifyNpmVersionAvailable({
+    targetVersion: "0.2.1", maxAttempts: 3, retryDelayMs: 1,
+    nowImpl: () => elapsed,
+    sleepImpl: async (ms) => { elapsed += ms; },
+    fetchImpl: async () => { calls++; return new Response("Unavailable", { status: 503 }); },
+  }), (error) => error instanceof ReleaseError && error.code === "NETWORK_ERROR" && error.details.status === 503);
+  assert.equal(calls, 3);
+  assert.equal(elapsed, 2);
 });
 
 test("verifyOidcRuntimePrerequisites and publishToNpm enforce Node >= 22.14 / npm >= 11.5.1, prefer OIDC, and fall back to scoped NPM_TOKEN without leaks", async () => {

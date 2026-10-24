@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Allow up to two minutes for npm registry version propagation, with bounded request timeouts and cache revalidation; continue rejecting metadata and package checksum mismatches before Registry publication.
+
 ## [0.2.1] - 2026-10-24
 
 ### Security
