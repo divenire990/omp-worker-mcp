@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-24
+
+### Security
+
+- Refreshed vulnerable transitive dependencies within their existing compatible ranges: `body-parser` to `2.4.0`, `fast-uri` to `3.1.9`, `hono` to `4.13.13`, `ip-address` to `10.7.4`, `proxy-addr` to `2.0.8`, and `qs` to `6.16.1`.
+
+### Changed
+
+- Updated `@modelcontextprotocol/sdk` to `1.32.1` and `zod` to `4.6.7` (PRs #7 and #8).
+- Updated build tooling to TypeScript `7.0.2` and `@types/node` `26.6.5`, with explicit Node ambient types in `tsconfig.json` (PR #6). The runtime minimum remains Node.js 22.
+- Updated pinned GitHub Actions to `actions/checkout@7.0.1` and `actions/setup-node@7.1.0` (PRs #4 and #5), retaining the trusted-source publication gates.
+
+### Fixed
+
+- Removed duplicate root `bin` metadata from `package-lock.json` left by dependency-branch integration.
+
+MCP tool names and public request/response schemas are unchanged from `0.2.0`.
+
 ## [0.2.0] - 2026-10-23
 
 ### Added

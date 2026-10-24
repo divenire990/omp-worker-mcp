@@ -3,7 +3,7 @@
   "name": "io.github.divenire990/omp-worker-mcp",
   "title": "omp-worker-mcp",
   "description": "Hand off coding tasks from ChatGPT, Codex or Claude Code to local Oh My Pi (OMP) workers.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "websiteUrl": "https://github.com/divenire990/omp-worker-mcp#readme",
   "repository": {
     "url": "https://github.com/divenire990/omp-worker-mcp",
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "omp-worker-mcp",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "transport": {
         "type": "stdio"
       },
