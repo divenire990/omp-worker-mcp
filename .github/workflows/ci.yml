@@ -38,7 +38,7 @@ jobs:
         run: |
           for i in 1 2 3 4 5; do
             echo "=== Repeat run $i/5 ==="
-            node --test tests/runner.test.mjs tests/mcp.test.mjs
+            node --test tests/runner.test.mjs tests/mcp.test.mjs tests/regression-e2e.test.mjs
           done
 
       - name: Verify package bundle
@@ -83,5 +83,6 @@ jobs:
         with:
           name: release-bundle-${{ github.sha }}
           path: .release-artifact/*
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
